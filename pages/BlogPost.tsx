@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Clock, Share2, Facebook, Linkedin, ArrowRight } from 'lucide-react';
-import { BLOG_POSTS } from '../constants';
+import { useDataContext } from '../components/DataContext';
 
 const BlogPost: React.FC = () => {
+  const { blogPosts } = useDataContext();
   const { id } = useParams<{ id: string }>();
-  const post = BLOG_POSTS.find(p => p.id === id);
+  const post = blogPosts.find(p => p.id === id);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -23,7 +24,7 @@ const BlogPost: React.FC = () => {
   }
 
   // Find related posts (simple logic: same category, not current post)
-  const relatedPosts = BLOG_POSTS
+  const relatedPosts = blogPosts
     .filter(p => p.category === post.category && p.id !== post.id)
     .slice(0, 2);
 

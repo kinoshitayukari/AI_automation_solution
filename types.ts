@@ -36,3 +36,13 @@ export interface Challenge {
   title: string;
   description: string;
 }
+
+export interface ContactSubmission {
+  id: string;
+  name: string;
+  email: string;
+  topic: string;
+  message: string;
+  createdAt: string;
+  status: '未対応' | '対応済み';
+}
