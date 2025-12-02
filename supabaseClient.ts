@@ -16,10 +16,25 @@ export type SupabaseResponse<T> = {
   error: string | null;
 };
 
+const parseErrorMessage = async (response: Response) => {
+  try {
+    const body = await response.clone().json();
+    if (typeof body === 'object' && body !== null) {
+      // Supabase REST typically returns `{message, details, hint}` on errors
+      const details = [body.message, body.details].filter(Boolean).join(' ');
+      if (details) return details;
+    }
+  } catch (err) {
+    // fall through to text parsing
+  }
+
+  const text = await response.text();
+  return text || `Supabase request failed with status ${response.status}`;
+};
+
 const handleResponse = async <T>(response: Response): Promise<SupabaseResponse<T>> => {
   if (!response.ok) {
-    const message = await response.text();
-    return { data: null, error: message || 'Unknown Supabase error' };
+    return { data: null, error: await parseErrorMessage(response) };
   }
   const json = (await response.json()) as T;
   return { data: json, error: null };

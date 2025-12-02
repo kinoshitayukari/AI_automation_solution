@@ -21,12 +21,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>(DEFAULT_BLOG_POSTS);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
 
+  const reportError = (context: string, error?: string | null) => {
+    const message = error ? `${context}: ${error}` : context;
+    console.error(message);
+    if (typeof window !== 'undefined') {
+      alert(message);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       const { data: blogData, error: blogError } = await supabase.select<any>('blog_posts', {
         column: 'date',
         ascending: false,
       });
+
+      if (blogError) {
+        reportError('ブログ記事の取得に失敗しました', blogError);
+      }
 
       if (!blogError && blogData?.length) {
         setBlogPosts(
@@ -45,7 +57,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       } else {
         setBlogPosts(DEFAULT_BLOG_POSTS);
-        await supabase.upsert('blog_posts',
+        const { error: seedError } = await supabase.upsert('blog_posts',
           DEFAULT_BLOG_POSTS.map((post) => ({
             id: post.id,
             title: post.title,
@@ -60,12 +72,23 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
             image_url: post.imageUrl,
           }))
         );
+
+        if (seedError) {
+          reportError('デフォルト記事のSupabase投入に失敗しました', seedError);
+        }
       }
 
-      const { data: contactData } = await supabase.select<any>('contact_submissions', {
-        column: 'created_at',
-        ascending: false,
-      });
+      const { data: contactData, error: contactError } = await supabase.select<any>(
+        'contact_submissions',
+        {
+          column: 'created_at',
+          ascending: false,
+        }
+      );
+
+      if (contactError) {
+        reportError('問い合わせの取得に失敗しました', contactError);
+      }
 
       if (contactData) {
         setContactSubmissions(
@@ -87,7 +110,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addBlogPost = async (post: BlogPost) => {
     setBlogPosts((prev) => [post, ...prev]);
-    await supabase.upsert('blog_posts', {
+    const { error } = await supabase.upsert('blog_posts', {
       id: post.id,
       title: post.title,
       excerpt: post.excerpt,
@@ -100,12 +123,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       read_time: post.readTime,
       image_url: post.imageUrl,
     });
+
+    if (error) {
+      setBlogPosts((prev) => prev.filter((p) => p.id !== post.id));
+      reportError('ブログ記事の保存に失敗しました', error);
+    }
   };
 
   const updateBlogPost = async (id: string, updates: Partial<BlogPost>) => {
+    const previous = blogPosts;
     setBlogPosts((prev) => prev.map((post) => (post.id === id ? { ...post, ...updates } : post)));
     const target = { ...blogPosts.find((post) => post.id === id), ...updates } as BlogPost;
-    await supabase.upsert('blog_posts', {
+    const { error } = await supabase.upsert('blog_posts', {
       id: target.id,
       title: target.title,
       excerpt: target.excerpt,
@@ -118,11 +147,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       read_time: target.readTime,
       image_url: target.imageUrl,
     });
+
+    if (error) {
+      setBlogPosts(previous);
+      reportError('ブログ記事の更新に失敗しました', error);
+    }
   };
 
   const removeBlogPost = async (id: string) => {
+    const previous = blogPosts;
     setBlogPosts((prev) => prev.filter((post) => post.id !== id));
-    await supabase.delete('blog_posts', 'id', id);
+    const { error } = await supabase.delete('blog_posts', 'id', id);
+
+    if (error) {
+      setBlogPosts(previous);
+      reportError('ブログ記事の削除に失敗しました', error);
+    }
   };
 
   const addContactSubmission = async (
@@ -135,7 +175,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: '未対応',
     };
     setContactSubmissions((prev) => [newSubmission, ...prev]);
-    await supabase.insert('contact_submissions', {
+    const { error } = await supabase.insert('contact_submissions', {
       id: newSubmission.id,
       name: newSubmission.name,
       email: newSubmission.email,
@@ -144,13 +184,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       created_at: newSubmission.createdAt,
       status: newSubmission.status,
     });
+
+    if (error) {
+      setContactSubmissions((prev) => prev.filter((entry) => entry.id !== newSubmission.id));
+      reportError('問い合わせの保存に失敗しました', error);
+    }
   };
 
   const updateContactStatus = async (id: string, status: ContactSubmission['status']) => {
+    const previous = contactSubmissions;
     setContactSubmissions((prev) =>
       prev.map((entry) => (entry.id === id ? { ...entry, status } : entry))
     );
-    await supabase.update('contact_submissions', 'id', id, { status });
+    const { error } = await supabase.update('contact_submissions', 'id', id, { status });
+
+    if (error) {
+      setContactSubmissions(previous);
+      reportError('問い合わせステータスの更新に失敗しました', error);
+    }
   };
 
   const value = useMemo(
