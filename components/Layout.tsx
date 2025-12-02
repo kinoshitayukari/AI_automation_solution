@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { useNavigateToContact } from './useNavigateToContact';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
+  const navigateToContact = useNavigateToContact();
 
   const navLinks = [
     { name: 'サービス概要', path: '/' },
@@ -57,7 +59,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 ログイン
               </Link>
-              <button className="bg-brand-accent hover:bg-teal-400 text-brand-dark px-5 py-2 rounded-full text-sm font-bold shadow-lg transition-transform transform hover:scale-105">
+              <button
+                className="bg-brand-accent hover:bg-teal-400 text-brand-dark px-5 py-2 rounded-full text-sm font-bold shadow-lg transition-transform transform hover:scale-105"
+                onClick={navigateToContact}
+              >
                 無料体験
               </button>
             </div>
@@ -96,7 +101,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 >
                   ログイン
                 </Link>
-                <button className="w-full text-center py-2 bg-brand-accent text-brand-dark font-bold rounded-md">
+                <button
+                  className="w-full text-center py-2 bg-brand-accent text-brand-dark font-bold rounded-md"
+                  onClick={() => {
+                    navigateToContact();
+                    setIsMenuOpen(false);
+                  }}
+                >
                   無料体験
                 </button>
               </div>

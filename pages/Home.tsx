@@ -1,11 +1,15 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CHALLENGES, SOLUTIONS, TESTIMONIALS } from '../constants';
 import { useDataContext } from '../components/DataContext';
+import { useNavigateToContact } from '../components/useNavigateToContact';
 
 const Home: React.FC = () => {
-  const { addContactSubmission, contactSubmissions } = useDataContext();
+  const { addContactSubmission } = useDataContext();
+  const navigateToContact = useNavigateToContact();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [contactForm, setContactForm] = React.useState({
     name: '',
     email: '',
@@ -13,6 +17,18 @@ const Home: React.FC = () => {
     message: '',
   });
   const [contactFeedback, setContactFeedback] = React.useState('');
+
+  React.useEffect(() => {
+    const scrollTarget = (location.state as { scrollTo?: string })?.scrollTo;
+    if (scrollTarget === 'contact') {
+      const timer = window.setTimeout(() => {
+        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
+      navigate(location.pathname, { replace: true });
+      return () => window.clearTimeout(timer);
+    }
+  }, [location, navigate]);
 
   const handleContactSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -22,7 +38,7 @@ const Home: React.FC = () => {
     }
     await addContactSubmission(contactForm);
     setContactForm({ name: '', email: '', topic: '', message: '' });
-    setContactFeedback('送信が完了しました。24時間以内にご連絡いたします。');
+    setContactFeedback('送信しました。');
   };
 
   return (
@@ -53,7 +69,10 @@ const Home: React.FC = () => {
               プログラミング不要。実務で使えるAI自動化を3ヶ月でマスター
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-brand-accent hover:bg-teal-400 text-brand-dark font-bold py-4 px-8 rounded-full text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105">
+              <button
+                className="bg-brand-accent hover:bg-teal-400 text-brand-dark font-bold py-4 px-8 rounded-full text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105"
+                onClick={navigateToContact}
+              >
                 無料体験を始める <ArrowRight size={20} />
               </button>
               <button className="bg-transparent border-2 border-white hover:bg-white hover:text-brand-dark text-white font-bold py-4 px-8 rounded-full text-lg transition-all">
@@ -255,47 +274,6 @@ const Home: React.FC = () => {
                 送信する
               </button>
             </form>
-            <div className="mt-10">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-lg font-bold text-gray-900">送信履歴</h3>
-                <p className="text-xs text-gray-500">直近の問い合わせ状況を確認できます</p>
-              </div>
-              {contactSubmissions.length === 0 ? (
-                <p className="text-sm text-gray-500">まだ問い合わせ履歴はありません。フォームから送信するとここに表示されます。</p>
-              ) : (
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
-                  {contactSubmissions.map((submission) => (
-                    <div
-                      key={submission.id}
-                      className="border border-gray-200 bg-white rounded-xl p-4 shadow-sm"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{submission.name}</p>
-                          <p className="text-xs text-gray-500">{submission.email}</p>
-                        </div>
-                        <span
-                          className={`text-xs font-semibold rounded-full px-3 py-1 border ${
-                            submission.status === '対応済み'
-                              ? 'bg-green-100 text-green-700 border-green-200'
-                              : 'bg-amber-100 text-amber-700 border-amber-200'
-                          }`}
-                        >
-                          {submission.status}
-                        </span>
-                      </div>
-                      {submission.topic && (
-                        <p className="text-xs text-gray-500 mb-1">件名: {submission.topic}</p>
-                      )}
-                      <p className="text-sm text-gray-700 whitespace-pre-line">{submission.message}</p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        送信日時: {new Date(submission.createdAt).toLocaleString('ja-JP')}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </section>
@@ -310,8 +288,11 @@ const Home: React.FC = () => {
           <p className="text-xl text-gray-600 mb-10">
             7日間の無料トライアルで、すべての学習コンテンツにアクセス可能
           </p>
-          <button className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-4 px-12 rounded-full text-lg shadow-xl transition-transform transform hover:scale-105 flex items-center gap-3 mx-auto">
-             無料体験を始める <ArrowRight />
+          <button
+            className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-4 px-12 rounded-full text-lg shadow-xl transition-transform transform hover:scale-105 flex items-center gap-3 mx-auto"
+            onClick={navigateToContact}
+          >
+            無料体験を始める <ArrowRight />
           </button>
 
           <div className="mt-16 rounded-3xl overflow-hidden shadow-2xl relative">
