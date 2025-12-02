@@ -14,13 +14,13 @@ const Home: React.FC = () => {
   });
   const [contactFeedback, setContactFeedback] = React.useState('');
 
-  const handleContactSubmit = (event: React.FormEvent) => {
+  const handleContactSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!contactForm.name || !contactForm.email || !contactForm.message) {
       setContactFeedback('必須項目を入力してください。');
       return;
     }
-    addContactSubmission(contactForm);
+    await addContactSubmission(contactForm);
     setContactForm({ name: '', email: '', topic: '', message: '' });
     setContactFeedback('送信が完了しました。24時間以内にご連絡いたします。');
   };
