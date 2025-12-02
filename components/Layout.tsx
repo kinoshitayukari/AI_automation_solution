@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: '学習コース', path: '/' },
     { name: 'ブログ', path: '/blog' },
     { name: '導入事例', path: '/' },
-    { name: '管理画面', path: '/' },
+    { name: '管理画面', path: '/admin' },
   ];
 
   // Helper to determine if we are on the home page for specific styling or logic
@@ -47,13 +47,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {link.name}
                 </Link>
               ))}
-              <button className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                  isHome 
-                    ? 'border-white text-white hover:bg-white hover:text-brand-dark' 
+              <Link
+                to="/admin"
+                className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                  isHome
+                    ? 'border-white text-white hover:bg-white hover:text-brand-dark'
                     : 'border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white'
-                }`}>
+                }`}
+              >
                 ログイン
-              </button>
+              </Link>
               <button className="bg-brand-accent hover:bg-teal-400 text-brand-dark px-5 py-2 rounded-full text-sm font-bold shadow-lg transition-transform transform hover:scale-105">
                 無料体験
               </button>
@@ -86,9 +89,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Link>
               ))}
               <div className="mt-4 flex flex-col space-y-3 px-3">
-                <button className="w-full text-center py-2 border border-white text-white rounded-md">
+                <Link
+                  to="/admin"
+                  className="w-full text-center py-2 border border-white text-white rounded-md"
+                  onClick={() => setIsMenuOpen(false)}
+                >
                   ログイン
-                </button>
+                </Link>
                 <button className="w-full text-center py-2 bg-brand-accent text-brand-dark font-bold rounded-md">
                   無料体験
                 </button>

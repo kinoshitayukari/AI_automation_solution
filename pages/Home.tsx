@@ -2,8 +2,29 @@ import React from 'react';
 import { ArrowRight, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CHALLENGES, SOLUTIONS, TESTIMONIALS } from '../constants';
+import { useDataContext } from '../components/DataContext';
 
 const Home: React.FC = () => {
+  const { addContactSubmission } = useDataContext();
+  const [contactForm, setContactForm] = React.useState({
+    name: '',
+    email: '',
+    topic: '',
+    message: '',
+  });
+  const [contactFeedback, setContactFeedback] = React.useState('');
+
+  const handleContactSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!contactForm.name || !contactForm.email || !contactForm.message) {
+      setContactFeedback('必須項目を入力してください。');
+      return;
+    }
+    addContactSubmission(contactForm);
+    setContactForm({ name: '', email: '', topic: '', message: '' });
+    setContactFeedback('送信が完了しました。24時間以内にご連絡いたします。');
+  };
+
   return (
     <div className="bg-white">
       {/* Hero Section */}
@@ -163,6 +184,77 @@ const Home: React.FC = () => {
                 </p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-24 bg-white" id="contact">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
+          <div className="lg:col-span-2">
+            <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">Contact</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 mb-4">お問い合わせ</h2>
+            <p className="text-gray-600 leading-relaxed mb-4">
+              学習コースや法人導入についてのご相談など、お気軽にご連絡ください。フォームから送信された内容は管理画面で確認できます。
+            </p>
+            <ul className="space-y-3 text-gray-700">
+              <li className="flex items-center gap-2"><CheckCircle2 className="text-brand-light" size={18} /> 24時間以内に担当者よりご連絡します。</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="text-brand-light" size={18} /> 体験版のご案内やデモのご予約も可能です。</li>
+              <li className="flex items-center gap-2"><CheckCircle2 className="text-brand-light" size={18} /> オンラインで完結、最短3分で送信。</li>
+            </ul>
+          </div>
+          <div className="lg:col-span-3 bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+            <form className="space-y-4" onSubmit={handleContactSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">お名前 *</label>
+                  <input
+                    type="text"
+                    value={contactForm.name}
+                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス *</label>
+                  <input
+                    type="email"
+                    value={contactForm.email}
+                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ご相談内容</label>
+                <input
+                  type="text"
+                  value={contactForm.topic}
+                  onChange={(e) => setContactForm({ ...contactForm, topic: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  placeholder="例：法人研修について"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">詳細 *</label>
+                <textarea
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  rows={4}
+                  placeholder="お問い合わせ内容を具体的にご記入ください。"
+                />
+              </div>
+              {contactFeedback && (
+                <p className="text-sm text-brand-dark bg-teal-50 border border-brand-light rounded-lg px-3 py-2">{contactFeedback}</p>
+              )}
+              <button
+                type="submit"
+                className="w-full bg-brand-dark text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-900 transition-colors"
+              >
+                送信する
+              </button>
+            </form>
           </div>
         </div>
       </section>

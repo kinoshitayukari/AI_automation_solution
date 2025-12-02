@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Clock, ArrowRight } from 'lucide-react';
-import { BLOG_POSTS, CATEGORIES } from '../constants';
+import { CATEGORIES } from '../constants';
+import { useDataContext } from '../components/DataContext';
 
 const BlogList: React.FC = () => {
+  const { blogPosts } = useDataContext();
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredPosts = BLOG_POSTS.filter(post => {
+  const filteredPosts = blogPosts.filter(post => {
     const matchesCategory = activeCategory === "すべて" || post.category === activeCategory;
-    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchesCategory && matchesSearch;
   });
