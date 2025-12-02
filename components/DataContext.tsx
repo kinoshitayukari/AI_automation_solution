@@ -5,6 +5,7 @@ import { BlogPost, ContactSubmission } from '../types';
 type DataContextType = {
   blogPosts: BlogPost[];
   addBlogPost: (post: BlogPost) => void;
+  updateBlogPost: (id: string, updates: Partial<BlogPost>) => void;
   removeBlogPost: (id: string) => void;
   contactSubmissions: ContactSubmission[];
   addContactSubmission: (submission: Omit<ContactSubmission, 'id' | 'createdAt' | 'status'>) => void;
@@ -19,6 +20,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addBlogPost = (post: BlogPost) => {
     setBlogPosts((prev) => [post, ...prev]);
+  };
+
+  const updateBlogPost = (id: string, updates: Partial<BlogPost>) => {
+    setBlogPosts((prev) => prev.map((post) => (post.id === id ? { ...post, ...updates } : post)));
   };
 
   const removeBlogPost = (id: string) => {
@@ -47,6 +52,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     () => ({
       blogPosts,
       addBlogPost,
+      updateBlogPost,
       removeBlogPost,
       contactSubmissions,
       addContactSubmission,

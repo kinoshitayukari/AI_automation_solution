@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: '学習コース', path: '/' },
     { name: 'ブログ', path: '/blog' },
     { name: '導入事例', path: '/' },
-    { name: '管理画面', path: '/admin' },
+    { name: '管理画面', path: '/admin/blog' },
   ];
 
   // Helper to determine if we are on the home page for specific styling or logic
@@ -48,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Link>
               ))}
               <Link
-                to="/admin"
+                to="/admin/blog"
                 className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
                   isHome
                     ? 'border-white text-white hover:bg-white hover:text-brand-dark'
@@ -90,7 +90,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               ))}
               <div className="mt-4 flex flex-col space-y-3 px-3">
                 <Link
-                  to="/admin"
+                  to="/admin/blog"
                   className="w-full text-center py-2 border border-white text-white rounded-md"
                   onClick={() => setIsMenuOpen(false)}
                 >
