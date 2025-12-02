@@ -5,7 +5,7 @@ import { CHALLENGES, SOLUTIONS, TESTIMONIALS } from '../constants';
 import { useDataContext } from '../components/DataContext';
 
 const Home: React.FC = () => {
-  const { addContactSubmission } = useDataContext();
+  const { addContactSubmission, contactSubmissions } = useDataContext();
   const [contactForm, setContactForm] = React.useState({
     name: '',
     email: '',
@@ -255,6 +255,47 @@ const Home: React.FC = () => {
                 送信する
               </button>
             </form>
+            <div className="mt-10">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-lg font-bold text-gray-900">送信履歴</h3>
+                <p className="text-xs text-gray-500">直近の問い合わせ状況を確認できます</p>
+              </div>
+              {contactSubmissions.length === 0 ? (
+                <p className="text-sm text-gray-500">まだ問い合わせ履歴はありません。フォームから送信するとここに表示されます。</p>
+              ) : (
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+                  {contactSubmissions.map((submission) => (
+                    <div
+                      key={submission.id}
+                      className="border border-gray-200 bg-white rounded-xl p-4 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">{submission.name}</p>
+                          <p className="text-xs text-gray-500">{submission.email}</p>
+                        </div>
+                        <span
+                          className={`text-xs font-semibold rounded-full px-3 py-1 border ${
+                            submission.status === '対応済み'
+                              ? 'bg-green-100 text-green-700 border-green-200'
+                              : 'bg-amber-100 text-amber-700 border-amber-200'
+                          }`}
+                        >
+                          {submission.status}
+                        </span>
+                      </div>
+                      {submission.topic && (
+                        <p className="text-xs text-gray-500 mb-1">件名: {submission.topic}</p>
+                      )}
+                      <p className="text-sm text-gray-700 whitespace-pre-line">{submission.message}</p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        送信日時: {new Date(submission.createdAt).toLocaleString('ja-JP')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
