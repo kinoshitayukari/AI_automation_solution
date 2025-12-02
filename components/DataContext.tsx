@@ -54,18 +54,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>(DEFAULT_BLOG_POSTS);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
 
-  const withTableHint = (error: string | null, table: string) => {
-    if (error?.includes('Could not find the table')) {
-      const createSql = tableCreateSql[table]?.trim();
-      const sqlHint = createSql ? `\n作成例:\n${createSql}` : '';
-      const envHint =
-        table === BLOG_TABLE
-          ? '環境変数 VITE_SUPABASE_BLOG_TABLE に実際のブログテーブル名を指定してください。'
-          : '環境変数 VITE_SUPABASE_CONTACT_TABLE に実際の問い合わせテーブル名を指定してください。\n例: contact_submissions（推奨）, contact_submission など、Supabase で作成した正確な名前を設定してください。';
-      return `${error}（スキーマ: ${supabaseSchema}, テーブル名: ${table}）\n${envHint}${sqlHint}`;
-    }
-    return error;
-  };
+const projectRefFromUrl = (url: string) => {
+  const match = url.match(/https?:\/\/([^.]+)\.supabase\.co/);
+  return match?.[1];
+};
+
+const withTableHint = (error: string | null, table: string) => {
+  if (error?.includes('Could not find the table')) {
+    const createSql = tableCreateSql[table]?.trim();
+    const sqlHint = createSql ? `\n作成例:\n${createSql}` : '';
+    const envHint =
+      table === BLOG_TABLE
+        ? '環境変数 VITE_SUPABASE_BLOG_TABLE に実際のブログテーブル名を指定してください。'
+        : '環境変数 VITE_SUPABASE_CONTACT_TABLE に実際の問い合わせテーブル名を指定してください。\n例: contact_submissions（推奨）, contact_submission など、Supabase で作成した正確な名前を設定してください。';
+
+    const projectRef = projectRefFromUrl(import.meta.env.VITE_SUPABASE_URL || '');
+    const sqlEditorUrl = projectRef
+      ? `https://supabase.com/dashboard/project/${projectRef}/sql` 
+      : 'Supabase ダッシュボード (SQL Editor)';
+
+    const howToCreate =
+      '\n\n---\nSupabase にテーブルを作成する手順:\n1. Supabase ダッシュボードにログイン\n2. プロジェクトの SQL Editor を開く\n3. 上記の CREATE TABLE 文を貼り付けて実行\n4. RLS を無効化するか、 anon ロールが読み書きできるポリシーを追加';
+
+    return `${error}（スキーマ: ${supabaseSchema}, テーブル名: ${table}）\n${envHint}${sqlHint}\nSQL Editor: ${sqlEditorUrl}${howToCreate}`;
+  }
+  return error;
+};
 
   const reportError = (context: string, error?: string | null) => {
     const message = error ? `${context}: ${error}` : context;
