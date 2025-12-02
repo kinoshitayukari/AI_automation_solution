@@ -4,7 +4,37 @@ import { BlogPost, ContactSubmission } from '../types';
 import { supabase, supabaseSchema } from '../supabaseClient';
 
 const BLOG_TABLE = import.meta.env.VITE_SUPABASE_BLOG_TABLE || 'blog_posts';
-const CONTACT_TABLE = import.meta.env.VITE_SUPABASE_CONTACT_TABLE || 'contact_submissions';
+const CONTACT_TABLE =
+  import.meta.env.VITE_SUPABASE_CONTACT_TABLE || 'contact_submissions';
+
+const tableCreateSql: Record<string, string> = {
+  [BLOG_TABLE]: `
+    create table if not exists ${supabaseSchema}.${BLOG_TABLE} (
+      id uuid primary key,
+      title text,
+      excerpt text,
+      content text,
+      category text,
+      tags text[],
+      author_name text,
+      author_avatar text,
+      date timestamptz,
+      read_time text,
+      image_url text
+    );
+  `,
+  [CONTACT_TABLE]: `
+    create table if not exists ${supabaseSchema}.${CONTACT_TABLE} (
+      id uuid primary key,
+      name text,
+      email text,
+      topic text,
+      message text,
+      created_at timestamptz default now(),
+      status text
+    );
+  `,
+};
 
 type DataContextType = {
   blogPosts: BlogPost[];
@@ -26,7 +56,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const withTableHint = (error: string | null, table: string) => {
     if (error?.includes('Could not find the table')) {
-      return `${error}（スキーマ: ${supabaseSchema}, テーブル名: ${table}）`;
+      const createSql = tableCreateSql[table]?.trim();
+      const sqlHint = createSql ? `\n作成例:\n${createSql}` : '';
+      return `${error}（スキーマ: ${supabaseSchema}, テーブル名: ${table}）${sqlHint}`;
     }
     return error;
   };
