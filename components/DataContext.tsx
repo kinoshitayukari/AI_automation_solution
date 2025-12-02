@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { BLOG_POSTS as DEFAULT_BLOG_POSTS } from '../constants';
 import { BlogPost, ContactSubmission } from '../types';
-import { supabase } from '../supabaseClient';
+import { supabase, supabaseSchema } from '../supabaseClient';
+
+const BLOG_TABLE = import.meta.env.VITE_SUPABASE_BLOG_TABLE || 'blog_posts';
+const CONTACT_TABLE = import.meta.env.VITE_SUPABASE_CONTACT_TABLE || 'contact_submissions';
 
 type DataContextType = {
   blogPosts: BlogPost[];
@@ -21,6 +24,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>(DEFAULT_BLOG_POSTS);
   const [contactSubmissions, setContactSubmissions] = useState<ContactSubmission[]>([]);
 
+  const withTableHint = (error: string | null, table: string) => {
+    if (error?.includes('Could not find the table')) {
+      return `${error}（スキーマ: ${supabaseSchema}, テーブル名: ${table}）`;
+    }
+    return error;
+  };
+
   const reportError = (context: string, error?: string | null) => {
     const message = error ? `${context}: ${error}` : context;
     console.error(message);
@@ -31,13 +41,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const loadData = async () => {
-      const { data: blogData, error: blogError } = await supabase.select<any>('blog_posts', {
+      const { data: blogData, error: blogError } = await supabase.select<any>(BLOG_TABLE, {
         column: 'date',
         ascending: false,
       });
 
       if (blogError) {
-        reportError('ブログ記事の取得に失敗しました', blogError);
+        reportError('ブログ記事の取得に失敗しました', withTableHint(blogError, BLOG_TABLE));
       }
 
       if (!blogError && blogData?.length) {
@@ -57,7 +67,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         );
       } else {
         setBlogPosts(DEFAULT_BLOG_POSTS);
-        const { error: seedError } = await supabase.upsert('blog_posts',
+        const { error: seedError } = await supabase.upsert(BLOG_TABLE,
           DEFAULT_BLOG_POSTS.map((post) => ({
             id: post.id,
             title: post.title,
@@ -79,7 +89,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const { data: contactData, error: contactError } = await supabase.select<any>(
-        'contact_submissions',
+        CONTACT_TABLE,
         {
           column: 'created_at',
           ascending: false,
@@ -87,7 +97,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
 
       if (contactError) {
-        reportError('問い合わせの取得に失敗しました', contactError);
+        reportError('問い合わせの取得に失敗しました', withTableHint(contactError, CONTACT_TABLE));
       }
 
       if (contactData) {
@@ -110,7 +120,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addBlogPost = async (post: BlogPost) => {
     setBlogPosts((prev) => [post, ...prev]);
-    const { error } = await supabase.upsert('blog_posts', {
+    const { error } = await supabase.upsert(BLOG_TABLE, {
       id: post.id,
       title: post.title,
       excerpt: post.excerpt,
@@ -126,7 +136,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       setBlogPosts((prev) => prev.filter((p) => p.id !== post.id));
-      reportError('ブログ記事の保存に失敗しました', error);
+      reportError('ブログ記事の保存に失敗しました', withTableHint(error, BLOG_TABLE));
     }
   };
 
@@ -134,7 +144,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const previous = blogPosts;
     setBlogPosts((prev) => prev.map((post) => (post.id === id ? { ...post, ...updates } : post)));
     const target = { ...blogPosts.find((post) => post.id === id), ...updates } as BlogPost;
-    const { error } = await supabase.upsert('blog_posts', {
+    const { error } = await supabase.upsert(BLOG_TABLE, {
       id: target.id,
       title: target.title,
       excerpt: target.excerpt,
@@ -150,18 +160,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       setBlogPosts(previous);
-      reportError('ブログ記事の更新に失敗しました', error);
+      reportError('ブログ記事の更新に失敗しました', withTableHint(error, BLOG_TABLE));
     }
   };
 
   const removeBlogPost = async (id: string) => {
     const previous = blogPosts;
     setBlogPosts((prev) => prev.filter((post) => post.id !== id));
-    const { error } = await supabase.delete('blog_posts', 'id', id);
+    const { error } = await supabase.delete(BLOG_TABLE, 'id', id);
 
     if (error) {
       setBlogPosts(previous);
-      reportError('ブログ記事の削除に失敗しました', error);
+      reportError('ブログ記事の削除に失敗しました', withTableHint(error, BLOG_TABLE));
     }
   };
 
@@ -175,7 +185,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       status: '未対応',
     };
     setContactSubmissions((prev) => [newSubmission, ...prev]);
-    const { error } = await supabase.insert('contact_submissions', {
+    const { error } = await supabase.insert(CONTACT_TABLE, {
       id: newSubmission.id,
       name: newSubmission.name,
       email: newSubmission.email,
@@ -187,7 +197,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       setContactSubmissions((prev) => prev.filter((entry) => entry.id !== newSubmission.id));
-      reportError('問い合わせの保存に失敗しました', error);
+      reportError('問い合わせの保存に失敗しました', withTableHint(error, CONTACT_TABLE));
     }
   };
 
@@ -196,11 +206,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setContactSubmissions((prev) =>
       prev.map((entry) => (entry.id === id ? { ...entry, status } : entry))
     );
-    const { error } = await supabase.update('contact_submissions', 'id', id, { status });
+    const { error } = await supabase.update(CONTACT_TABLE, 'id', id, { status });
 
     if (error) {
       setContactSubmissions(previous);
-      reportError('問い合わせステータスの更新に失敗しました', error);
+      reportError(
+        '問い合わせステータスの更新に失敗しました',
+        withTableHint(error, CONTACT_TABLE)
+      );
     }
   };
 

@@ -1,12 +1,16 @@
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://oxkamuxdvqfruduerpsc.supabase.co';
-const supabaseAnonKey =
+export const supabaseUrl =
+  import.meta.env.VITE_SUPABASE_URL || 'https://oxkamuxdvqfruduerpsc.supabase.co';
+export const supabaseAnonKey =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94a2FtdXhkdnFmcnVkdWVycHNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NTIwNjIsImV4cCI6MjA4MDIyODA2Mn0.5pGLuEUDjFg9v5KFJ9i2mRycx5XUbrusAxPSzJq5rt4';
+export const supabaseSchema = import.meta.env.VITE_SUPABASE_SCHEMA || 'public';
 
 const baseHeaders = {
   apikey: supabaseAnonKey,
   Authorization: `Bearer ${supabaseAnonKey}`,
   'Content-Type': 'application/json',
+  'Accept-Profile': supabaseSchema,
+  'Content-Profile': supabaseSchema,
 };
 
 const restUrl = `${supabaseUrl}/rest/v1`;
