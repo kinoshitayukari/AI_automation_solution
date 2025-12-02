@@ -30,7 +30,7 @@ const BlogAdmin: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!form.title || !form.excerpt || !form.content) {
       setError('記事の必須項目を入力してください。');
@@ -56,9 +56,9 @@ const BlogAdmin: React.FC = () => {
     };
 
     if (editingId) {
-      updateBlogPost(editingId, basePost);
+      await updateBlogPost(editingId, basePost);
     } else {
-      addBlogPost(basePost);
+      await addBlogPost(basePost);
     }
 
     setForm(defaultFormState);
@@ -80,10 +80,10 @@ const BlogAdmin: React.FC = () => {
     setError('');
   };
 
-  const handleRemove = (id: string) => {
+  const handleRemove = async (id: string) => {
     const target = blogPosts.find((post) => post.id === id);
     if (target && window.confirm(`「${target.title}」を本当に削除しますか？`)) {
-      removeBlogPost(id);
+      await removeBlogPost(id);
       if (editingId === id) {
         setForm(defaultFormState);
         setEditingId(null);

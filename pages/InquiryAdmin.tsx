@@ -47,7 +47,7 @@ const InquiryAdmin: React.FC = () => {
                   </div>
                   <select
                     value={entry.status}
-                    onChange={(e) => updateContactStatus(entry.id, e.target.value as any)}
+                    onChange={async (e) => updateContactStatus(entry.id, e.target.value as any)}
                     className={`text-xs font-semibold rounded-full px-3 py-1 border ${
                       entry.status === '対応済み'
                         ? 'bg-green-100 text-green-700 border-green-200'
