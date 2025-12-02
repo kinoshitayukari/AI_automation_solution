@@ -38,7 +38,7 @@ const Home: React.FC = () => {
     }
     await addContactSubmission(contactForm);
     setContactForm({ name: '', email: '', topic: '', message: '' });
-    setContactFeedback('送信しました。24時間以内にご連絡いたします。');
+    setContactFeedback('送信しました。');
   };
 
   return (
