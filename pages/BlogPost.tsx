@@ -2,9 +2,11 @@ import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Clock, Share2, Facebook, Linkedin, ArrowRight } from 'lucide-react';
 import { useDataContext } from '../components/DataContext';
+import { useNavigateToContact } from '../components/useNavigateToContact';
 
 const BlogPost: React.FC = () => {
   const { blogPosts } = useDataContext();
+  const navigateToContact = useNavigateToContact();
   const { id } = useParams<{ id: string }>();
   const post = blogPosts.find(p => p.id === id);
 
@@ -172,8 +174,11 @@ const BlogPost: React.FC = () => {
       <div className="max-w-3xl mx-auto px-4 mt-20 text-center">
          <h3 className="text-3xl font-bold mb-4">実践的なスキルを身につける</h3>
          <p className="text-gray-600 mb-8">体系的なカリキュラムで、AI自動化を本格的に学びませんか？</p>
-         <button className="bg-brand-dark hover:bg-teal-900 text-white font-bold py-3 px-8 rounded-full shadow-lg flex items-center gap-2 mx-auto">
-             無料体験を始める <ArrowRight size={18} />
+         <button
+           className="bg-brand-dark hover:bg-teal-900 text-white font-bold py-3 px-8 rounded-full shadow-lg flex items-center gap-2 mx-auto"
+           onClick={navigateToContact}
+         >
+           無料体験を始める <ArrowRight size={18} />
          </button>
       </div>
 

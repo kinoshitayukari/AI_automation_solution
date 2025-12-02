@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import { Search, Clock, ArrowRight } from 'lucide-react';
 import { CATEGORIES } from '../constants';
 import { useDataContext } from '../components/DataContext';
+import { useNavigateToContact } from '../components/useNavigateToContact';
 
 const BlogList: React.FC = () => {
   const { blogPosts } = useDataContext();
+  const navigateToContact = useNavigateToContact();
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -133,8 +135,11 @@ const BlogList: React.FC = () => {
          <div className="max-w-4xl mx-auto text-center px-4">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">もっと深く学びたい方へ</h2>
             <p className="text-gray-600 mb-8">実践的なカリキュラムで、AI自動化のスキルを体系的に習得できます</p>
-            <button className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2 mx-auto">
-                無料体験を始める <ArrowRight size={18} />
+            <button
+              className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105 flex items-center gap-2 mx-auto"
+              onClick={navigateToContact}
+            >
+              無料体験を始める <ArrowRight size={18} />
             </button>
          </div>
       </div>
