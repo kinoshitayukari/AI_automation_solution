@@ -58,7 +58,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error?.includes('Could not find the table')) {
       const createSql = tableCreateSql[table]?.trim();
       const sqlHint = createSql ? `\n作成例:\n${createSql}` : '';
-      return `${error}（スキーマ: ${supabaseSchema}, テーブル名: ${table}）${sqlHint}`;
+      const envHint =
+        table === BLOG_TABLE
+          ? '環境変数 VITE_SUPABASE_BLOG_TABLE に実際のブログテーブル名を指定してください。'
+          : '環境変数 VITE_SUPABASE_CONTACT_TABLE に実際の問い合わせテーブル名を指定してください。\n例: contact_submissions（推奨）, contact_submission など、Supabase で作成した正確な名前を設定してください。';
+      return `${error}（スキーマ: ${supabaseSchema}, テーブル名: ${table}）\n${envHint}${sqlHint}`;
     }
     return error;
   };
