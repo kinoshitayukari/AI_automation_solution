@@ -1,9 +1,33 @@
-import React from 'react';
-import { ArrowRight, CheckCircle2, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { CHALLENGES, SOLUTIONS, TESTIMONIALS } from '../constants';
+import ContactSection from '../components/ContactSection';
 
 const Home: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Scroll to ContactSection if navigated with state
+  useEffect(() => {
+    if (location.state && location.state.scrollToContact) {
+      const contactSection = document.getElementById('contact');
+      if (contactSection) {
+        setTimeout(() => {
+            contactSection.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, [location]);
+
+  // Handler for scrolling to contact form from within the page
+  const scrollToContact = (type: 'trial' | 'development' = 'trial') => {
+    // If we are already on Home, we can scroll. But if we need to set state (like inquiry type),
+    // it's cleaner to replace state so ContactSection picks it up, or just use context.
+    // For simplicity, we navigate to self with state to trigger the useEffect in ContactSection/Home
+    navigate('/', { state: { scrollToContact: true, type } });
+  };
+
   return (
     <div className="bg-white">
       {/* Hero Section */}
@@ -32,7 +56,10 @@ const Home: React.FC = () => {
               プログラミング不要。実務で使えるAI自動化を3ヶ月でマスター
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-brand-accent hover:bg-teal-400 text-brand-dark font-bold py-4 px-8 rounded-full text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105">
+              <button 
+                onClick={() => scrollToContact('trial')}
+                className="bg-brand-accent hover:bg-teal-400 text-brand-dark font-bold py-4 px-8 rounded-full text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105"
+              >
                 無料体験を始める <ArrowRight size={20} />
               </button>
               <button className="bg-transparent border-2 border-white hover:bg-white hover:text-brand-dark text-white font-bold py-4 px-8 rounded-full text-lg transition-all">
@@ -167,6 +194,85 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* Development Service Section */}
+      <section className="py-24 bg-brand-dark text-white overflow-hidden relative">
+        {/* Background Decoration */}
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-white/5 skew-x-12 transform origin-top translate-x-1/4 pointer-events-none"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2">
+              <span className="inline-block text-brand-accent font-bold tracking-wider uppercase mb-4 text-sm">
+                Development Service
+              </span>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                自社での導入が難しい場合は、<br />
+                <span className="text-brand-accent">プロに開発をお任せ</span>ください
+              </h2>
+              <p className="text-gray-300 text-lg mb-8 leading-relaxed">
+                「学習する時間がない」「すぐに自動化を実現したい」という企業様向けに、AI自動化システムの受託開発も行っています。
+                ヒアリングから設計、実装、運用まで、専任のエンジニアがフルサポートします。
+              </p>
+              
+              <div className="space-y-4 mb-10">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-accent flex items-center justify-center mt-1">
+                    <CheckCircle2 size={16} className="text-brand-dark" />
+                  </div>
+                  <div className="ml-4">
+                    <h4 className="text-xl font-bold">完全オーダーメイド開発</h4>
+                    <p className="text-gray-400 mt-1">御社の業務フローに合わせた最適な自動化システムを構築します。</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand-accent flex items-center justify-center mt-1">
+                    <CheckCircle2 size={16} className="text-brand-dark" />
+                  </div>
+                  <div className="ml-4">
+                    <h4 className="text-xl font-bold">既存システムとの連携</h4>
+                    <p className="text-gray-400 mt-1">現在お使いのチャットツールやデータベースとのシームレスな連携が可能です。</p>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => scrollToContact('development')}
+                className="bg-white text-brand-dark hover:bg-gray-100 font-bold py-4 px-8 rounded-full text-lg shadow-lg transition-transform transform hover:scale-105 inline-flex items-center gap-2"
+              >
+                開発の無料相談はこちら <ArrowRight size={20} />
+              </button>
+            </div>
+
+            <div className="lg:w-1/2 relative">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+                  <img 
+                    src="https://picsum.photos/id/60/800/600" 
+                    alt="Development Team" 
+                    className="w-full h-auto opacity-90 hover:opacity-100 transition-opacity duration-500"
+                  />
+                  {/* Overlay card */}
+                  <div className="absolute bottom-6 left-6 right-6 bg-gray-900/90 backdrop-blur-sm p-6 rounded-xl border border-white/10">
+                      <div className="flex justify-between items-end">
+                          <div>
+                              <div className="text-gray-400 text-xs uppercase tracking-wider mb-1">Success Case</div>
+                              <div className="text-white font-bold text-lg">大手物流企業様</div>
+                              <div className="text-brand-accent text-sm">受注処理自動化システム</div>
+                          </div>
+                          <div className="text-right">
+                              <div className="text-3xl font-bold text-white">80%</div>
+                              <div className="text-gray-400 text-xs">工数削減</div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              {/* Decorative elements */}
+              <div className="absolute -z-10 top-10 -right-10 w-24 h-24 bg-brand-accent/20 rounded-full blur-2xl"></div>
+              <div className="absolute -z-10 -bottom-10 -left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-32 bg-white">
         <div className="max-w-4xl mx-auto text-center px-4">
@@ -177,7 +283,10 @@ const Home: React.FC = () => {
           <p className="text-xl text-gray-600 mb-10">
             7日間の無料トライアルで、すべての学習コンテンツにアクセス可能
           </p>
-          <button className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-4 px-12 rounded-full text-lg shadow-xl transition-transform transform hover:scale-105 flex items-center gap-3 mx-auto">
+          <button 
+            onClick={() => scrollToContact('trial')}
+            className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-4 px-12 rounded-full text-lg shadow-xl transition-transform transform hover:scale-105 inline-flex items-center gap-3 mx-auto"
+          >
              無料体験を始める <ArrowRight />
           </button>
 
@@ -187,6 +296,9 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Embedded Contact Section */}
+      <ContactSection id="contact" />
     </div>
   );
 };

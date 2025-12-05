@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Clock, Share2, Facebook, Linkedin, ArrowRight } from 'lucide-react';
 import { BLOG_POSTS } from '../constants';
 
 const BlogPost: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const post = BLOG_POSTS.find(p => p.id === id);
 
   useEffect(() => {
@@ -21,6 +22,10 @@ const BlogPost: React.FC = () => {
       </div>
     );
   }
+
+  const scrollToContact = () => {
+    navigate('/', { state: { scrollToContact: true, type: 'trial' } });
+  };
 
   // Find related posts (simple logic: same category, not current post)
   const relatedPosts = BLOG_POSTS
@@ -167,11 +172,14 @@ const BlogPost: React.FC = () => {
         </div>
       )}
 
-      {/* Sticky Bottom Bar for Mobile Conversion? Maybe too intrusive, let's just do a footer block */}
+      {/* Footer CTA */}
       <div className="max-w-3xl mx-auto px-4 mt-20 text-center">
          <h3 className="text-3xl font-bold mb-4">実践的なスキルを身につける</h3>
          <p className="text-gray-600 mb-8">体系的なカリキュラムで、AI自動化を本格的に学びませんか？</p>
-         <button className="bg-brand-dark hover:bg-teal-900 text-white font-bold py-3 px-8 rounded-full shadow-lg flex items-center gap-2 mx-auto">
+         <button 
+            onClick={scrollToContact}
+            className="bg-brand-dark hover:bg-teal-900 text-white font-bold py-3 px-8 rounded-full shadow-lg inline-flex items-center gap-2 mx-auto"
+         >
              無料体験を始める <ArrowRight size={18} />
          </button>
       </div>

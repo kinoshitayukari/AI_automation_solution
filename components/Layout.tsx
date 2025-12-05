@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 interface LayoutProps {
@@ -9,17 +9,20 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navLinks = [
     { name: 'サービス概要', path: '/' },
     { name: '学習コース', path: '/' },
-    { name: 'ブログ', path: '/blog' },
-    { name: '導入事例', path: '/' },
-    { name: '管理画面', path: '/' },
   ];
 
   // Helper to determine if we are on the home page for specific styling or logic
   const isHome = location.pathname === '/';
+
+  const scrollToContact = (type: 'trial' | 'development' | 'other' = 'trial') => {
+    setIsMenuOpen(false);
+    navigate('/', { state: { scrollToContact: true, type } });
+  };
 
   return (
     <div className="flex flex-col min-h-screen font-sans">
@@ -47,6 +50,31 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {link.name}
                 </Link>
               ))}
+              <button 
+                onClick={() => scrollToContact('development')}
+                className={`text-sm font-medium hover:opacity-75 transition-colors bg-transparent border-none cursor-pointer ${
+                    isHome ? 'text-white' : 'text-gray-700 hover:text-brand'
+                  }`}
+              >
+                システム開発
+              </button>
+              <Link
+                to="/blog"
+                className={`text-sm font-medium hover:opacity-75 transition-colors ${
+                    isHome ? 'text-white' : 'text-gray-700 hover:text-brand'
+                  }`}
+              >
+                ブログ
+              </Link>
+              <button 
+                onClick={() => scrollToContact('development')} // Assume "Case Studies" also leads here or just a placeholder link
+                className={`text-sm font-medium hover:opacity-75 transition-colors bg-transparent border-none cursor-pointer ${
+                    isHome ? 'text-white' : 'text-gray-700 hover:text-brand'
+                  }`}
+              >
+                導入事例
+              </button>
+
               <button className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
                   isHome 
                     ? 'border-white text-white hover:bg-white hover:text-brand-dark' 
@@ -54,7 +82,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 }`}>
                 ログイン
               </button>
-              <button className="bg-brand-accent hover:bg-teal-400 text-brand-dark px-5 py-2 rounded-full text-sm font-bold shadow-lg transition-transform transform hover:scale-105">
+              <button 
+                onClick={() => scrollToContact('trial')}
+                className="bg-brand-accent hover:bg-teal-400 text-brand-dark px-5 py-2 rounded-full text-sm font-bold shadow-lg transition-transform transform hover:scale-105"
+              >
                 無料体験
               </button>
             </div>
@@ -85,11 +116,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {link.name}
                 </Link>
               ))}
+              <button 
+                onClick={() => scrollToContact('development')}
+                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10"
+              >
+                システム開発
+              </button>
+              <Link
+                  to="/blog"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  ブログ
+              </Link>
               <div className="mt-4 flex flex-col space-y-3 px-3">
                 <button className="w-full text-center py-2 border border-white text-white rounded-md">
                   ログイン
                 </button>
-                <button className="w-full text-center py-2 bg-brand-accent text-brand-dark font-bold rounded-md">
+                <button 
+                  onClick={() => scrollToContact('trial')}
+                  className="w-full text-center py-2 bg-brand-accent text-brand-dark font-bold rounded-md"
+                >
                   無料体験
                 </button>
               </div>
@@ -131,11 +178,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
 
             <div>
-              <h4 className="text-sm font-bold tracking-wider uppercase mb-4 text-gray-300">Courses</h4>
+              <h4 className="text-sm font-bold tracking-wider uppercase mb-4 text-gray-300">Services</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">基礎コース</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">実践コース</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">エキスパートコース</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">学習コース一覧</a></li>
+                <li>
+                    <button onClick={() => scrollToContact('development')} className="hover:text-white transition-colors text-left">
+                        システム開発依頼
+                    </button>
+                </li>
+                <li><a href="#" className="hover:text-white transition-colors">法人向け研修</a></li>
               </ul>
             </div>
 
@@ -143,7 +194,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <h4 className="text-sm font-bold tracking-wider uppercase mb-4 text-gray-300">Company</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">会社概要</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">お問い合わせ</a></li>
+                <li>
+                    <button onClick={() => scrollToContact('other')} className="hover:text-white transition-colors text-left">
+                        お問い合わせ
+                    </button>
+                </li>
                 <li><a href="#" className="hover:text-white transition-colors">プライバシーポリシー</a></li>
               </ul>
             </div>

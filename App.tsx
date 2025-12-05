@@ -6,12 +6,15 @@ import BlogList from './pages/BlogList';
 import BlogPost from './pages/BlogPost';
 
 // ScrollToTop component to handle scroll position on route change
+// Adjusted to not scroll if there is a scrollToContact state
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation() as any;
 
   React.useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
+    if (!state || !state.scrollToContact) {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, state]);
 
   return null;
 };
