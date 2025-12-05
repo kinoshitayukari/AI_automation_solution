@@ -121,23 +121,7 @@ const withTableHint = (error: string | null, table: string) => {
         );
       } else {
         setBlogPosts(DEFAULT_BLOG_POSTS);
-        const { error: seedError } = await supabase.upsert(BLOG_TABLE,
-          DEFAULT_BLOG_POSTS.map((post) => ({
-            id: post.id,
-            title: post.title,
-            excerpt: post.excerpt,
-            content: post.content,
-            category: post.category,
-            tags: post.tags,
-            author_name: post.author.name,
-            author_avatar: post.author.avatar,
-            date: post.date,
-            read_time: post.readTime,
-            image_url: post.imageUrl,
-            eye_catch_url: post.eyeCatchUrl || post.imageUrl,
-            inline_image_urls: post.inlineImages ?? [],
-          }))
-        );
+        const { error: seedError } = await upsertBlogPosts(DEFAULT_BLOG_POSTS);
 
         if (seedError) {
           reportError('デフォルト記事のSupabase投入に失敗しました', seedError);
@@ -174,23 +158,61 @@ const withTableHint = (error: string | null, table: string) => {
     loadData();
   }, []);
 
+  const [supportsEyeCatch, setSupportsEyeCatch] = useState(true);
+
+  const makeBlogPayload = (post: BlogPost, includeEyeCatch: boolean) => ({
+    id: post.id,
+    title: post.title,
+    excerpt: post.excerpt,
+    content: post.content,
+    category: post.category,
+    tags: post.tags,
+    author_name: post.author.name,
+    author_avatar: post.author.avatar,
+    date: post.date,
+    read_time: post.readTime,
+    image_url: post.imageUrl,
+    ...(includeEyeCatch ? { eye_catch_url: post.eyeCatchUrl || post.imageUrl } : {}),
+    inline_image_urls: post.inlineImages ?? [],
+  });
+
+  const isEyeCatchMissing = (error: string | null) =>
+    Boolean(error?.includes("'eye_catch_url' column"));
+
+  const upsertBlogPost = async (post: BlogPost) => {
+    const firstPayload = makeBlogPayload(post, supportsEyeCatch);
+    const firstResult = await supabase.upsert(BLOG_TABLE, firstPayload);
+
+    if (!firstResult.error) return firstResult;
+
+    if (supportsEyeCatch && isEyeCatchMissing(firstResult.error)) {
+      setSupportsEyeCatch(false);
+      return supabase.upsert(BLOG_TABLE, makeBlogPayload(post, false));
+    }
+
+    return firstResult;
+  };
+
+  const upsertBlogPosts = async (posts: BlogPost[]) => {
+    const firstPayload = posts.map((post) => makeBlogPayload(post, supportsEyeCatch));
+    const firstResult = await supabase.upsert(BLOG_TABLE, firstPayload);
+
+    if (!firstResult.error) return firstResult;
+
+    if (supportsEyeCatch && isEyeCatchMissing(firstResult.error)) {
+      setSupportsEyeCatch(false);
+      return supabase.upsert(
+        BLOG_TABLE,
+        posts.map((post) => makeBlogPayload(post, false))
+      );
+    }
+
+    return firstResult;
+  };
+
   const addBlogPost = async (post: BlogPost) => {
     setBlogPosts((prev) => [post, ...prev]);
-    const { error } = await supabase.upsert(BLOG_TABLE, {
-      id: post.id,
-      title: post.title,
-      excerpt: post.excerpt,
-      content: post.content,
-      category: post.category,
-      tags: post.tags,
-      author_name: post.author.name,
-      author_avatar: post.author.avatar,
-      date: post.date,
-      read_time: post.readTime,
-      image_url: post.imageUrl,
-      eye_catch_url: post.eyeCatchUrl || post.imageUrl,
-      inline_image_urls: post.inlineImages ?? [],
-    });
+    const { error } = await upsertBlogPost(post);
 
     if (error) {
       setBlogPosts((prev) => prev.filter((p) => p.id !== post.id));
@@ -202,21 +224,7 @@ const withTableHint = (error: string | null, table: string) => {
     const previous = blogPosts;
     setBlogPosts((prev) => prev.map((post) => (post.id === id ? { ...post, ...updates } : post)));
     const target = { ...blogPosts.find((post) => post.id === id), ...updates } as BlogPost;
-    const { error } = await supabase.upsert(BLOG_TABLE, {
-      id: target.id,
-      title: target.title,
-      excerpt: target.excerpt,
-      content: target.content,
-      category: target.category,
-      tags: target.tags,
-      author_name: target.author.name,
-      author_avatar: target.author.avatar,
-      date: target.date,
-      read_time: target.readTime,
-      image_url: target.imageUrl,
-      eye_catch_url: target.eyeCatchUrl || target.imageUrl,
-      inline_image_urls: target.inlineImages ?? [],
-    });
+    const { error } = await upsertBlogPost(target);
 
     if (error) {
       setBlogPosts(previous);
