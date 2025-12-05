@@ -67,61 +67,18 @@ const BlogPost: React.FC = () => {
           </div>
         )}
 
-        {/* Content Body - Simulating rich text with hardcoded styling for the demo */}
+        {/* Content Body - render saved HTML so画像も本文に出る */}
         <div className="prose prose-lg max-w-none text-gray-700">
-            
-            {/* Lead Block */}
             <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-brand-accent mb-10">
                 <p className="font-medium text-gray-800 m-0">
                     {post.excerpt}
                 </p>
             </div>
 
-            <p className="mb-8 leading-relaxed">
-                {post.content}
-                ここにさらに詳細な本文が続きます。AI技術の進化は、私たちの働き方を根本から変えようとしています。従来、専門的なスキルが必要だったタスクも、AIツールの支援を受けることで、誰でも効率的に実行できるようになりました。
-            </p>
-
-            <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6 pb-2 border-b border-gray-200">
-                なぜAI自動化が必要なのか
-            </h2>
-            <p className="mb-6 leading-relaxed">
-                現代のビジネス環境では、スピードと効率性が競争力の鍵となっています。定型的な作業に時間を取られることで、本来注力すべき創造的な業務や戦略的な意思決定に十分な時間を割けないという問題が生じています。
-            </p>
-
-            <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6 pb-2 border-b border-gray-200">
-                具体的な活用シーン
-            </h2>
-            <p className="mb-6 leading-relaxed">
-                AI自動化は、データ入力、レポート作成、メール対応、スケジュール管理など、様々な業務に適用できます。特に、繰り返し行われる作業や、一定のルールに基づいて処理できる業務において、大きな効果を発揮します。
-            </p>
-
-             <div className="bg-gray-50 p-8 rounded-xl my-8">
-                <h3 className="flex items-center text-xl font-bold text-gray-900 mb-4">
-                    <span className="text-brand-accent mr-2">💡</span> 実践のポイント
-                </h3>
-                <ul className="space-y-3">
-                    <li className="flex items-start">
-                        <span className="text-green-500 mr-2">✔</span>
-                        <span>小さな業務から始めて、徐々に範囲を広げていく</span>
-                    </li>
-                    <li className="flex items-start">
-                        <span className="text-green-500 mr-2">✔</span>
-                        <span>効果測定を行い、改善を繰り返す</span>
-                    </li>
-                    <li className="flex items-start">
-                        <span className="text-green-500 mr-2">✔</span>
-                        <span>チーム全体で知識を共有し、活用を促進する</span>
-                    </li>
-                </ul>
-             </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6 pb-2 border-b border-gray-200">
-                まとめ
-            </h2>
-            <p className="leading-relaxed">
-                AI自動化は、もはや大企業だけのものではありません。適切な知識とツールがあれば、誰でも業務効率化を実現できます。まずは小さな一歩から始めて、徐々にスキルを磨いていきましょう。
-            </p>
+            <div
+              className="prose prose-lg max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: post.content || '<p>本文がまだありません。</p>' }}
+            />
 
             {post.inlineImages && post.inlineImages.length > 0 && (
               <div className="mt-10 space-y-4">

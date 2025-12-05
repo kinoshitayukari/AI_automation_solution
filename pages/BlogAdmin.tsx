@@ -62,6 +62,7 @@ const BlogAdmin: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [stepOutput, setStepOutput] = useState<StepOutput>({});
   const [contentView, setContentView] = useState<'html' | 'preview'>('preview');
+  const [activePanel, setActivePanel] = useState<'form' | 'list'>('form');
   const previewRef = useRef<HTMLDivElement | null>(null);
 
   const handleContentUpdate = (content: string) => {
@@ -243,6 +244,50 @@ const BlogAdmin: React.FC = () => {
     return categories;
   }, [blogPosts]);
 
+  const inlineImageList = useMemo(
+    () =>
+      form.inlineImages
+        .split(/\n|,/)
+        .map((line) => line.trim())
+        .filter(Boolean),
+    [form.inlineImages]
+  );
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
+      reader.readAsDataURL(file);
+    });
+
+  const handleEyeCatchUpload = async (file?: File | null) => {
+    if (!file) return;
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setForm((prev) => ({ ...prev, eyeCatchUrl: dataUrl, imageUrl: dataUrl }));
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : '画像のアップロードに失敗しました。');
+    }
+  };
+
+  const handleInlineImagesUpload = async (files?: FileList | null) => {
+    if (!files || files.length === 0) return;
+    try {
+      const uploads = await Promise.all(Array.from(files).map((file) => readFileAsDataUrl(file)));
+      const merged = [...inlineImageList, ...uploads];
+      setForm((prev) => ({ ...prev, inlineImages: merged.join('\n') }));
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : '本文画像のアップロードに失敗しました。');
+    }
+  };
+
+  const insertImageIntoContent = (url: string) => {
+    const snippet = `<figure style="margin:1.5rem 0;text-align:center"><img src="${url}" alt="ブログ画像" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08)"/><figcaption style="font-size:0.9rem;color:#4b5563;margin-top:0.5rem">画像の説明をここに記載</figcaption></figure>`;
+    setForm((prev) => ({ ...prev, content: prev.content ? `${prev.content}\n${snippet}` : snippet }));
+    setContentView('preview');
+  };
+
   return (
     <AdminGate title="ブログ管理" description="記事の作成・編集・削除が行えます。">
       <style>
@@ -297,14 +342,43 @@ const BlogAdmin: React.FC = () => {
           }
         `}
       </style>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            {editingId ? <Pencil className="text-brand-dark" /> : <PlusCircle className="text-brand-dark" />}
-            <h2 className="text-xl font-bold text-gray-900">{editingId ? '記事を編集' : '新規記事を追加'}</h2>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-brand-dark font-bold">Blog Admin</p>
+            <h2 className="text-2xl font-bold text-gray-900">記事作成と一覧をワンタップで切替</h2>
+            <p className="text-sm text-gray-600">画像アップロード、本文プレビュー、生成支援を1画面で完結できます。</p>
           </div>
+          <div className="inline-flex items-center bg-gray-100 rounded-xl p-1 text-sm font-bold border border-gray-200">
+            <button
+              type="button"
+              onClick={() => setActivePanel('form')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activePanel === 'form' ? 'bg-white shadow-sm text-brand-dark' : 'text-gray-700 hover:text-brand-dark'
+              }`}
+            >
+              ✏️ 記事作成 / 編集
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePanel('list')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activePanel === 'list' ? 'bg-white shadow-sm text-brand-dark' : 'text-gray-700 hover:text-brand-dark'
+              }`}
+            >
+              📚 記事一覧 / 進行状況
+            </button>
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+        {activePanel === 'form' ? (
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-4">
+              {editingId ? <Pencil className="text-brand-dark" /> : <PlusCircle className="text-brand-dark" />}
+              <h2 className="text-xl font-bold text-gray-900">{editingId ? '記事を編集' : '新規記事を追加'}</h2>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:items-center md:gap-4">
                 <div className="md:col-span-2 flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
@@ -547,28 +621,77 @@ const BlogAdmin: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">アイキャッチ画像URL</label>
-                <input
-                  type="text"
-                  value={form.eyeCatchUrl}
-                  onChange={(e) =>
-                    setForm({ ...form, eyeCatchUrl: e.target.value, imageUrl: e.target.value })
-                  }
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                  placeholder="1200x630程度を推奨"
-                />
-                <p className="text-xs text-gray-500 mt-1">一覧やSNSシェアで使うアイキャッチ画像を設定します。</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">アイキャッチ画像</label>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={form.eyeCatchUrl}
+                    onChange={(e) =>
+                      setForm({ ...form, eyeCatchUrl: e.target.value, imageUrl: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                    placeholder="URL または下のアップロードを利用"
+                  />
+                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-3 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleEyeCatchUpload(e.target.files?.[0])}
+                    />
+                    <span className="font-semibold">ローカル画像をアップロード</span>
+                    <span className="text-xs text-gray-500">1200x630 程度を推奨</span>
+                  </label>
+                  {form.eyeCatchUrl && (
+                    <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                      <img src={form.eyeCatchUrl} alt="アイキャッチ" className="w-full h-auto object-cover" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">URLかローカル画像を選択できます。アップロードした画像はそのまま記事一覧や本文のトップに使われます。</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">本文内画像URL (改行またはカンマ区切り)</label>
-                <textarea
-                  value={form.inlineImages}
-                  onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                  rows={3}
-                  placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
-                />
-                <p className="text-xs text-gray-500 mt-1">本文に挿入したい画像URLを複数入力できます。</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">本文内画像</label>
+                <div className="space-y-2">
+                  <textarea
+                    value={form.inlineImages}
+                    onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                    rows={3}
+                    placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
+                  />
+                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-3 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleInlineImagesUpload(e.target.files)}
+                    />
+                    <span className="font-semibold">ローカル画像を追加（複数可）</span>
+                    <span className="text-xs text-gray-500">アップロードで本文候補にも追加されます</span>
+                  </label>
+                  {inlineImageList.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {inlineImageList.map((url, idx) => (
+                        <div key={`${url}-${idx}`} className="border border-gray-100 rounded-lg overflow-hidden bg-white shadow-sm">
+                          <img src={url} alt="本文画像" className="w-full h-28 object-cover" />
+                          <div className="px-3 py-2 space-y-1">
+                            <p className="text-xs text-gray-600 break-all leading-tight">{url.slice(0, 80)}{url.length > 80 ? '...' : ''}</p>
+                            <button
+                              type="button"
+                              onClick={() => insertImageIntoContent(url)}
+                              className="w-full text-xs font-bold text-brand-dark border border-brand-dark/30 rounded-md py-1 hover:bg-brand-dark hover:text-white transition-colors"
+                            >
+                              本文へ挿入
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">URL入力でもアップロードでもOK。下の「本文へ挿入」でプレビューに直接配置できます。</p>
               </div>
             </div>
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>}
@@ -604,53 +727,68 @@ const BlogAdmin: React.FC = () => {
             </div>
           </form>
         </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-1 bg-white border border-gray-100 rounded-2xl shadow-sm p-4 h-fit">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">カテゴリ別記事数</h3>
+              <div className="space-y-2 text-sm text-gray-700">
+                {Object.entries(stats).map(([category, count]) => (
+                  <div key={category} className="flex items-center justify-between">
+                    <span>{category}</span>
+                    <span className="font-bold">{count}件</span>
+                  </div>
+                ))}
+                {blogPosts.length === 0 && <p className="text-gray-500">まだ記事がありません。</p>}
+              </div>
+            </div>
 
-        <div className="space-y-4">
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">カテゴリ別記事数</h3>
-            <div className="space-y-2 text-sm text-gray-700">
-              {Object.entries(stats).map(([category, count]) => (
-                <div key={category} className="flex items-center justify-between">
-                  <span>{category}</span>
-                  <span className="font-bold">{count}件</span>
-                </div>
-              ))}
-              {blogPosts.length === 0 && <p className="text-gray-500">まだ記事がありません。</p>}
+            <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">記事一覧</h3>
+                <p className="text-xs text-gray-500">クリックで即編集できます。</p>
+              </div>
+              <div className="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
+                {blogPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="border border-gray-100 rounded-lg p-3 flex items-start justify-between gap-3 bg-gray-50"
+                  >
+                    <div className="flex gap-3">
+                      <img
+                        src={post.eyeCatchUrl || post.imageUrl}
+                        alt={post.title}
+                        className="w-20 h-16 object-cover rounded-md border border-gray-100"
+                      />
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">{post.category} ・ {post.date}</p>
+                        <p className="font-semibold text-gray-900 leading-tight">{post.title}</p>
+                        <p className="text-xs text-gray-600 line-clamp-2">{post.excerpt}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <button
+                        onClick={() => {
+                          handleEdit(post);
+                          setActivePanel('form');
+                        }}
+                        className="text-brand-dark hover:underline flex items-center gap-1"
+                      >
+                        <Pencil size={16} /> 編集
+                      </button>
+                      <button
+                        onClick={() => handleRemove(post.id)}
+                        className="text-red-600 hover:underline flex items-center gap-1"
+                      >
+                        <Trash2 size={16} /> 削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {blogPosts.length === 0 && <p className="text-sm text-gray-500">まだ記事がありません。</p>}
+              </div>
             </div>
           </div>
-
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">記事一覧</h3>
-            <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
-              {blogPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="border border-gray-100 rounded-lg p-3 flex items-start justify-between gap-3 bg-gray-50"
-                >
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">{post.category} ・ {post.date}</p>
-                    <p className="font-semibold text-gray-900 leading-tight">{post.title}</p>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <button
-                      onClick={() => handleEdit(post)}
-                      className="text-brand-dark hover:underline flex items-center gap-1"
-                    >
-                      <Pencil size={16} /> 編集
-                    </button>
-                    <button
-                      onClick={() => handleRemove(post.id)}
-                      className="text-red-600 hover:underline flex items-center gap-1"
-                    >
-                      <Trash2 size={16} /> 削除
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {blogPosts.length === 0 && <p className="text-sm text-gray-500">まだ記事がありません。</p>}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </AdminGate>
   );
