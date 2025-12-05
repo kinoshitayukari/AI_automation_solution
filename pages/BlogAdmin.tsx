@@ -340,11 +340,11 @@ const BlogAdmin: React.FC = () => {
     }
   };
 
-  const handleInlineImagesUpload = async (files?: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const handleInlineImagesUpload = async (file?: File | null) => {
+    if (!file) return;
     try {
-      const uploads = await Promise.all(Array.from(files).map((file) => readFileAsDataUrl(file)));
-      const merged = [...inlineImageList, ...uploads];
+      const upload = await readFileAsDataUrl(file);
+      const merged = [...inlineImageList, upload];
       setForm((prev) => ({ ...prev, inlineImages: merged.join('\n') }));
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : '本文画像のアップロードに失敗しました。');
@@ -692,99 +692,98 @@ const BlogAdmin: React.FC = () => {
                 rows={2}
               />
             </div>
-            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">本文に挿入する画像</p>
-                  <p className="text-xs text-gray-600">記事編集欄の直前で、挿入候補の画像をまとめて管理できます。カーソル位置にそのまま差し込み可能です。</p>
-                </div>
-                <div className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-bold text-brand-dark">
-                  📥 インポート → カーソル位置へ
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <textarea
-                    value={form.inlineImages}
-                    onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                    rows={3}
-                    placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
-                  />
-                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-4 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => handleInlineImagesUpload(e.target.files)}
-                    />
-                    <span className="font-semibold">ローカル画像を追加（複数可）</span>
-                    <span className="text-xs text-gray-500">アップロードすると下の候補リストに並びます</span>
-                  </label>
-                  <p className="text-xs text-gray-500 flex items-center gap-2">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-dark text-white text-[10px] font-bold">Tip</span>
-                    プレビューかHTMLでカーソルを置き、「本文へ挿入」からワンクリックで差し込めます。
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {inlineImageList.length === 0 && (
-                    <p className="text-xs text-gray-500 border border-dashed border-gray-200 rounded-lg px-3 py-4 text-center bg-gray-50">
-                      画像URLを入力するかローカルから追加すると、ここに候補が表示されます。
-                    </p>
-                  )}
-                  {inlineImageList.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {inlineImageList.map((url, idx) => (
-                        <div key={`${url}-${idx}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                          <img src={url} alt="本文画像" className="w-full h-28 object-cover" />
-                          <div className="px-3 py-2 space-y-1">
-                            <p className="text-xs text-gray-600 break-all leading-tight">{url.slice(0, 80)}{url.length > 80 ? '...' : ''}</p>
-                            <button
-                              type="button"
-                              onClick={() => insertImageIntoContent(url)}
-                              className="w-full text-xs font-bold text-brand-dark border border-brand-dark/30 rounded-md py-1 hover:bg-brand-dark hover:text-white transition-colors"
-                            >
-                              本文へ挿入
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">本文 / HTML</p>
                   <p className="text-xs text-gray-600">HTMLを直接編集するか、装飾プレビューを見ながら内容を整えられます。</p>
                 </div>
-                <div className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-sm font-bold">
-                  <button
-                    type="button"
-                    onClick={() => setContentView('preview')}
-                    className={`px-3 py-2 rounded-md transition-colors ${
-                      contentView === 'preview'
-                        ? 'bg-brand-dark text-white shadow-sm'
-                        : 'text-gray-700 hover:text-brand-dark'
-                    }`}
-                  >
-                    プレビュー
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setContentView('html')}
-                    className={`px-3 py-2 rounded-md transition-colors ${
-                      contentView === 'html'
-                        ? 'bg-brand-dark text-white shadow-sm'
-                        : 'text-gray-700 hover:text-brand-dark'
-                    }`}
-                  >
-                    HTML
-                  </button>
+              </div>
+              <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">本文に挿入する画像</p>
+                    <p className="text-xs text-gray-600">プレビュー/HTML切替のすぐ上で管理し、カーソル位置へワンクリック挿入できます。</p>
+                  </div>
+                  <div className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1 text-xs font-bold text-brand-dark">
+                    📥 インポート → カーソル位置へ
+                  </div>
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <textarea
+                      value={form.inlineImages}
+                      onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                      rows={3}
+                      placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
+                    />
+                    <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-4 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleInlineImagesUpload(e.target.files?.[0])}
+                      />
+                      <span className="font-semibold">ローカル画像を追加（1枚ずつ）</span>
+                      <span className="text-xs text-gray-500">追加した画像は下の候補リストに並びます</span>
+                    </label>
+                    <p className="text-xs text-gray-500 flex items-center gap-2">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-dark text-white text-[10px] font-bold">Tip</span>
+                      プレビューかHTMLでカーソルを置き、「本文へ挿入」からワンクリックで差し込めます。
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {inlineImageList.length === 0 && (
+                      <p className="text-xs text-gray-500 border border-dashed border-gray-200 rounded-lg px-3 py-4 text-center bg-white">
+                        画像URLを入力するかローカルから追加すると、ここに候補が表示されます。
+                      </p>
+                    )}
+                    {inlineImageList.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {inlineImageList.map((url, idx) => (
+                          <div key={`${url}-${idx}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                            <img src={url} alt="本文画像" className="w-full h-28 object-cover" />
+                            <div className="px-3 py-2 space-y-1">
+                              <p className="text-xs text-gray-600 break-all leading-tight">{url.slice(0, 80)}{url.length > 80 ? '...' : ''}</p>
+                              <button
+                                type="button"
+                                onClick={() => insertImageIntoContent(url)}
+                                className="w-full text-xs font-bold text-brand-dark border border-brand-dark/30 rounded-md py-1 hover:bg-brand-dark hover:text-white transition-colors"
+                              >
+                                本文へ挿入
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-sm font-bold">
+                <button
+                  type="button"
+                  onClick={() => setContentView('preview')}
+                  className={`px-3 py-2 rounded-md transition-colors ${
+                    contentView === 'preview'
+                      ? 'bg-brand-dark text-white shadow-sm'
+                      : 'text-gray-700 hover:text-brand-dark'
+                  }`}
+                >
+                  プレビュー
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContentView('html')}
+                  className={`px-3 py-2 rounded-md transition-colors ${
+                    contentView === 'html'
+                      ? 'bg-brand-dark text-white shadow-sm'
+                      : 'text-gray-700 hover:text-brand-dark'
+                  }`}
+                >
+                  HTML
+                </button>
               </div>
 
               {contentView === 'html' ? (
