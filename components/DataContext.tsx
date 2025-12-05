@@ -121,23 +121,7 @@ const withTableHint = (error: string | null, table: string) => {
         );
       } else {
         setBlogPosts(DEFAULT_BLOG_POSTS);
-        const { error: seedError } = await supabase.upsert(BLOG_TABLE,
-          DEFAULT_BLOG_POSTS.map((post) => ({
-            id: post.id,
-            title: post.title,
-            excerpt: post.excerpt,
-            content: post.content,
-            category: post.category,
-            tags: post.tags,
-            author_name: post.author.name,
-            author_avatar: post.author.avatar,
-            date: post.date,
-            read_time: post.readTime,
-            image_url: post.imageUrl,
-            eye_catch_url: post.eyeCatchUrl || post.imageUrl,
-            inline_image_urls: post.inlineImages ?? [],
-          }))
-        );
+        const { error: seedError } = await upsertBlogPosts(DEFAULT_BLOG_POSTS);
 
         if (seedError) {
           reportError('デフォルト記事のSupabase投入に失敗しました', seedError);
@@ -174,23 +158,75 @@ const withTableHint = (error: string | null, table: string) => {
     loadData();
   }, []);
 
+  const [supportsEyeCatch, setSupportsEyeCatch] = useState(true);
+  const [supportsInlineImages, setSupportsInlineImages] = useState(true);
+
+  const makeBlogPayload = (
+    post: BlogPost,
+    includeEyeCatch: boolean,
+    includeInlineImages: boolean
+  ) => ({
+    id: post.id,
+    title: post.title,
+    excerpt: post.excerpt,
+    content: post.content,
+    category: post.category,
+    tags: post.tags,
+    author_name: post.author.name,
+    author_avatar: post.author.avatar,
+    date: post.date,
+    read_time: post.readTime,
+    image_url: post.imageUrl,
+    ...(includeEyeCatch ? { eye_catch_url: post.eyeCatchUrl || post.imageUrl } : {}),
+    ...(includeInlineImages ? { inline_image_urls: post.inlineImages ?? [] } : {}),
+  });
+
+  const isEyeCatchMissing = (error: string | null) =>
+    Boolean(error?.includes("'eye_catch_url' column"));
+
+  const isInlineImageMissing = (error: string | null) =>
+    Boolean(error?.includes("'inline_image_urls' column"));
+
+  const upsertWithColumnFallback = async (posts: BlogPost | BlogPost[]) => {
+    let includeEyeCatch = supportsEyeCatch;
+    let includeInlineImages = supportsInlineImages;
+
+    const toPayload = () =>
+      Array.isArray(posts)
+        ? posts.map((post) => makeBlogPayload(post, includeEyeCatch, includeInlineImages))
+        : makeBlogPayload(posts, includeEyeCatch, includeInlineImages);
+
+    let result = await supabase.upsert(BLOG_TABLE, toPayload());
+
+    for (let i = 0; i < 2 && result.error; i++) {
+      const eyeCatchMissing = includeEyeCatch && isEyeCatchMissing(result.error);
+      const inlineMissing = includeInlineImages && isInlineImageMissing(result.error);
+
+      if (!eyeCatchMissing && !inlineMissing) break;
+
+      if (eyeCatchMissing) {
+        includeEyeCatch = false;
+        setSupportsEyeCatch(false);
+      }
+
+      if (inlineMissing) {
+        includeInlineImages = false;
+        setSupportsInlineImages(false);
+      }
+
+      result = await supabase.upsert(BLOG_TABLE, toPayload());
+    }
+
+    return result;
+  };
+
+  const upsertBlogPost = async (post: BlogPost) => upsertWithColumnFallback(post);
+
+  const upsertBlogPosts = async (posts: BlogPost[]) => upsertWithColumnFallback(posts);
+
   const addBlogPost = async (post: BlogPost) => {
     setBlogPosts((prev) => [post, ...prev]);
-    const { error } = await supabase.upsert(BLOG_TABLE, {
-      id: post.id,
-      title: post.title,
-      excerpt: post.excerpt,
-      content: post.content,
-      category: post.category,
-      tags: post.tags,
-      author_name: post.author.name,
-      author_avatar: post.author.avatar,
-      date: post.date,
-      read_time: post.readTime,
-      image_url: post.imageUrl,
-      eye_catch_url: post.eyeCatchUrl || post.imageUrl,
-      inline_image_urls: post.inlineImages ?? [],
-    });
+    const { error } = await upsertBlogPost(post);
 
     if (error) {
       setBlogPosts((prev) => prev.filter((p) => p.id !== post.id));
@@ -202,21 +238,7 @@ const withTableHint = (error: string | null, table: string) => {
     const previous = blogPosts;
     setBlogPosts((prev) => prev.map((post) => (post.id === id ? { ...post, ...updates } : post)));
     const target = { ...blogPosts.find((post) => post.id === id), ...updates } as BlogPost;
-    const { error } = await supabase.upsert(BLOG_TABLE, {
-      id: target.id,
-      title: target.title,
-      excerpt: target.excerpt,
-      content: target.content,
-      category: target.category,
-      tags: target.tags,
-      author_name: target.author.name,
-      author_avatar: target.author.avatar,
-      date: target.date,
-      read_time: target.readTime,
-      image_url: target.imageUrl,
-      eye_catch_url: target.eyeCatchUrl || target.imageUrl,
-      inline_image_urls: target.inlineImages ?? [],
-    });
+    const { error } = await upsertBlogPost(target);
 
     if (error) {
       setBlogPosts(previous);
