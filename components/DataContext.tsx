@@ -159,8 +159,13 @@ const withTableHint = (error: string | null, table: string) => {
   }, []);
 
   const [supportsEyeCatch, setSupportsEyeCatch] = useState(true);
+  const [supportsInlineImages, setSupportsInlineImages] = useState(true);
 
-  const makeBlogPayload = (post: BlogPost, includeEyeCatch: boolean) => ({
+  const makeBlogPayload = (
+    post: BlogPost,
+    includeEyeCatch: boolean,
+    includeInlineImages: boolean
+  ) => ({
     id: post.id,
     title: post.title,
     excerpt: post.excerpt,
@@ -173,42 +178,51 @@ const withTableHint = (error: string | null, table: string) => {
     read_time: post.readTime,
     image_url: post.imageUrl,
     ...(includeEyeCatch ? { eye_catch_url: post.eyeCatchUrl || post.imageUrl } : {}),
-    inline_image_urls: post.inlineImages ?? [],
+    ...(includeInlineImages ? { inline_image_urls: post.inlineImages ?? [] } : {}),
   });
 
   const isEyeCatchMissing = (error: string | null) =>
     Boolean(error?.includes("'eye_catch_url' column"));
 
-  const upsertBlogPost = async (post: BlogPost) => {
-    const firstPayload = makeBlogPayload(post, supportsEyeCatch);
-    const firstResult = await supabase.upsert(BLOG_TABLE, firstPayload);
+  const isInlineImageMissing = (error: string | null) =>
+    Boolean(error?.includes("'inline_image_urls' column"));
 
-    if (!firstResult.error) return firstResult;
+  const upsertWithColumnFallback = async (posts: BlogPost | BlogPost[]) => {
+    let includeEyeCatch = supportsEyeCatch;
+    let includeInlineImages = supportsInlineImages;
 
-    if (supportsEyeCatch && isEyeCatchMissing(firstResult.error)) {
-      setSupportsEyeCatch(false);
-      return supabase.upsert(BLOG_TABLE, makeBlogPayload(post, false));
+    const toPayload = () =>
+      Array.isArray(posts)
+        ? posts.map((post) => makeBlogPayload(post, includeEyeCatch, includeInlineImages))
+        : makeBlogPayload(posts, includeEyeCatch, includeInlineImages);
+
+    let result = await supabase.upsert(BLOG_TABLE, toPayload());
+
+    for (let i = 0; i < 2 && result.error; i++) {
+      const eyeCatchMissing = includeEyeCatch && isEyeCatchMissing(result.error);
+      const inlineMissing = includeInlineImages && isInlineImageMissing(result.error);
+
+      if (!eyeCatchMissing && !inlineMissing) break;
+
+      if (eyeCatchMissing) {
+        includeEyeCatch = false;
+        setSupportsEyeCatch(false);
+      }
+
+      if (inlineMissing) {
+        includeInlineImages = false;
+        setSupportsInlineImages(false);
+      }
+
+      result = await supabase.upsert(BLOG_TABLE, toPayload());
     }
 
-    return firstResult;
+    return result;
   };
 
-  const upsertBlogPosts = async (posts: BlogPost[]) => {
-    const firstPayload = posts.map((post) => makeBlogPayload(post, supportsEyeCatch));
-    const firstResult = await supabase.upsert(BLOG_TABLE, firstPayload);
+  const upsertBlogPost = async (post: BlogPost) => upsertWithColumnFallback(post);
 
-    if (!firstResult.error) return firstResult;
-
-    if (supportsEyeCatch && isEyeCatchMissing(firstResult.error)) {
-      setSupportsEyeCatch(false);
-      return supabase.upsert(
-        BLOG_TABLE,
-        posts.map((post) => makeBlogPayload(post, false))
-      );
-    }
-
-    return firstResult;
-  };
+  const upsertBlogPosts = async (posts: BlogPost[]) => upsertWithColumnFallback(posts);
 
   const addBlogPost = async (post: BlogPost) => {
     setBlogPosts((prev) => [post, ...prev]);
