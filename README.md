@@ -15,6 +15,6 @@ View your app in AI Studio: https://ai.studio/apps/drive/1x-6pFx3T06P9AZzoPz6o1w
 
 1. Install dependencies:
    `npm install`
-2. Set the `VITE_GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key. This key is used to generate article drafts from keywords inside the blog admin screen.
+2. Set the `VITE_GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key. This key is used to generate article drafts from keywords inside the blog admin screen (you can also paste a key directly into the admin screen if preferred).
 3. Run the app:
    `npm run dev`
