@@ -10,13 +10,14 @@ const Home: React.FC = () => {
   const navigateToContact = useNavigateToContact();
   const location = useLocation();
   const navigate = useNavigate();
-  const [contactForm, setContactForm] = React.useState({
-    name: '',
-    email: '',
-    topic: '',
-    message: '',
-  });
+  const initialFormState = React.useMemo(
+    () => ({ name: '', email: '', topic: '', message: '', requestType: '' }),
+    []
+  );
+  const [contactForm, setContactForm] = React.useState(initialFormState);
+  const [automationForm, setAutomationForm] = React.useState(initialFormState);
   const [contactFeedback, setContactFeedback] = React.useState('');
+  const [automationFeedback, setAutomationFeedback] = React.useState('');
 
   React.useEffect(() => {
     const scrollTarget = (location.state as { scrollTo?: string })?.scrollTo;
@@ -30,15 +31,20 @@ const Home: React.FC = () => {
     }
   }, [location, navigate]);
 
-  const handleContactSubmit = async (event: React.FormEvent) => {
+  const handleContactSubmit = async (
+    event: React.FormEvent,
+    formState: typeof contactForm,
+    setFormState: React.Dispatch<React.SetStateAction<typeof contactForm>>,
+    setFeedback: React.Dispatch<React.SetStateAction<string>>
+  ) => {
     event.preventDefault();
-    if (!contactForm.name || !contactForm.email || !contactForm.message) {
-      setContactFeedback('必須項目を入力してください。');
+    if (!formState.name || !formState.email || !formState.message || !formState.requestType) {
+      setFeedback('必須項目を入力し、「無料体験」または「システム依頼」を選択してください。');
       return;
     }
-    await addContactSubmission(contactForm);
-    setContactForm({ name: '', email: '', topic: '', message: '' });
-    setContactFeedback('送信しました。');
+    await addContactSubmission(formState);
+    setFormState(initialFormState);
+    setFeedback('送信しました。');
   };
 
   return (
@@ -223,7 +229,47 @@ const Home: React.FC = () => {
             </ul>
           </div>
           <div className="lg:col-span-3 bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
-            <form className="space-y-4" onSubmit={handleContactSubmit}>
+            <form
+              className="space-y-4"
+              onSubmit={(event) =>
+                handleContactSubmit(event, contactForm, setContactForm, setContactFeedback)
+              }
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ご希望内容 *
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="requestType"
+                      value="無料体験"
+                      checked={contactForm.requestType === '無料体験'}
+                      onChange={(e) =>
+                        setContactForm({ ...contactForm, requestType: e.target.value as typeof contactForm.requestType })
+                      }
+                      required
+                      className="text-brand-dark focus:ring-brand-accent"
+                    />
+                    無料体験
+                  </label>
+                  <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                    <input
+                      type="radio"
+                      name="requestType"
+                      value="システム依頼"
+                      checked={contactForm.requestType === 'システム依頼'}
+                      onChange={(e) =>
+                        setContactForm({ ...contactForm, requestType: e.target.value as typeof contactForm.requestType })
+                      }
+                      required
+                      className="text-brand-dark focus:ring-brand-accent"
+                    />
+                    システム依頼
+                  </label>
+                </div>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">お名前 *</label>
@@ -305,6 +351,124 @@ const Home: React.FC = () => {
             <p className="text-lg leading-relaxed">
               現場の課題に合わせたAI自動化システムの企画・開発も承っています。既存ツールの連携からオーダーメイドのワークフロー構築まで、運用まで含めてサポートいたします。
             </p>
+          </div>
+
+          <div className="mt-10 bg-white border border-gray-200 rounded-2xl shadow-xl p-8 text-left">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+              <div className="lg:col-span-2 space-y-3">
+                <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">Contact</span>
+                <h3 className="text-3xl font-bold text-gray-900">無料体験・制作のご相談</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  無料体験の申込みも、AI自動化システム制作のご依頼も同じフォームからお送りください。担当者より24時間以内にご連絡いたします。
+                </p>
+                <ul className="space-y-2 text-gray-700 text-sm">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="text-brand-light" size={16} /> チェックボックスで「無料体験」か「システム依頼」を必ずお選びください。</li>
+                  <li className="flex items-center gap-2"><CheckCircle2 className="text-brand-light" size={16} /> ご相談内容の詳細も添えていただくとスムーズです。</li>
+                </ul>
+              </div>
+              <div className="lg:col-span-3 bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <form
+                  className="space-y-4"
+                  onSubmit={(event) =>
+                    handleContactSubmit(event, automationForm, setAutomationForm, setAutomationFeedback)
+                  }
+                >
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">ご希望内容 *</label>
+                    <div className="flex flex-wrap gap-4">
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="radio"
+                          name="automationRequestType"
+                          value="無料体験"
+                          checked={automationForm.requestType === '無料体験'}
+                          onChange={(e) =>
+                            setAutomationForm({
+                              ...automationForm,
+                              requestType: e.target.value as typeof automationForm.requestType,
+                            })
+                          }
+                          required
+                          className="text-brand-dark focus:ring-brand-accent"
+                        />
+                        無料体験
+                      </label>
+                      <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                        <input
+                          type="radio"
+                          name="automationRequestType"
+                          value="システム依頼"
+                          checked={automationForm.requestType === 'システム依頼'}
+                          onChange={(e) =>
+                            setAutomationForm({
+                              ...automationForm,
+                              requestType: e.target.value as typeof automationForm.requestType,
+                            })
+                          }
+                          required
+                          className="text-brand-dark focus:ring-brand-accent"
+                        />
+                        システム依頼
+                      </label>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">お名前 *</label>
+                      <input
+                        type="text"
+                        value={automationForm.name}
+                        onChange={(e) => setAutomationForm({ ...automationForm, name: e.target.value })}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス *</label>
+                      <input
+                        type="email"
+                        value={automationForm.email}
+                        onChange={(e) => setAutomationForm({ ...automationForm, email: e.target.value })}
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ご相談内容</label>
+                    <input
+                      type="text"
+                      value={automationForm.topic}
+                      onChange={(e) => setAutomationForm({ ...automationForm, topic: e.target.value })}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                      placeholder="例：業務フローの自動化を相談したい"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">詳細 *</label>
+                    <textarea
+                      value={automationForm.message}
+                      onChange={(e) => setAutomationForm({ ...automationForm, message: e.target.value })}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                      rows={4}
+                      placeholder="お問い合わせ内容を具体的にご記入ください。"
+                      required
+                    />
+                  </div>
+                  {automationFeedback && (
+                    <p className="text-sm text-brand-dark bg-teal-50 border border-brand-light rounded-lg px-3 py-2">
+                      {automationFeedback}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    className="w-full bg-brand-dark text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-900 transition-colors"
+                  >
+                    送信する
+                  </button>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </section>

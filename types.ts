@@ -41,6 +41,7 @@ export interface ContactSubmission {
   id: string;
   name: string;
   email: string;
+  requestType: '無料体験' | 'システム依頼';
   topic: string;
   message: string;
   createdAt: string;
