@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pencil, PlusCircle, Save, Trash2 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
 import { useDataContext } from '../components/DataContext';
@@ -73,9 +73,9 @@ const BlogAdmin: React.FC = () => {
   };
 
   const handlePreviewInput = () => {
+    savePreviewSelection();
     const nextContent = previewRef.current?.innerHTML ?? '';
     handleContentUpdate(nextContent);
-    savePreviewSelection();
   };
 
   const savePreviewSelection = () => {
@@ -84,7 +84,7 @@ const BlogAdmin: React.FC = () => {
     if (selection && selection.rangeCount > 0) {
       const range = selection.getRangeAt(0);
       if (previewRef.current?.contains(range.commonAncestorContainer)) {
-        previewSelectionRef.current = range;
+        previewSelectionRef.current = range.cloneRange();
       }
     }
   };
@@ -97,6 +97,51 @@ const BlogAdmin: React.FC = () => {
       };
     }
   };
+
+  const restorePreviewSelection = () => {
+    if (typeof window === 'undefined') return;
+    const saved = previewSelectionRef.current;
+    if (saved && previewRef.current?.contains(saved.commonAncestorContainer)) {
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(saved.cloneRange());
+    }
+  };
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleSelectionChange = () => {
+      if (typeof window === 'undefined') return;
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (previewRef.current?.contains(range.commonAncestorContainer)) {
+          previewSelectionRef.current = range.cloneRange();
+        }
+      }
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
+  useEffect(() => {
+    if (contentView === 'preview') {
+      requestAnimationFrame(() => restorePreviewSelection());
+    }
+    if (contentView === 'html' && htmlTextareaRef.current) {
+      const textarea = htmlTextareaRef.current;
+      requestAnimationFrame(() => {
+        const cursor = htmlSelectionRef.current ?? {
+          start: textarea.selectionStart ?? textarea.value.length,
+          end: textarea.selectionEnd ?? textarea.value.length,
+        };
+        textarea.focus();
+        textarea.setSelectionRange(cursor.start, cursor.end);
+      });
+    }
+  }, [contentView]);
 
   const extractJson = <T,>(text: string): T => {
     const cleaned = text.replace(/```json|```/g, '').trim();
@@ -306,6 +351,18 @@ const BlogAdmin: React.FC = () => {
     }
   };
 
+  const getPreviewInsertionRange = () => {
+    if (!previewRef.current || typeof document === 'undefined') return null;
+    const savedRange = previewSelectionRef.current?.cloneRange();
+    if (savedRange && previewRef.current.contains(savedRange.commonAncestorContainer)) {
+      return savedRange;
+    }
+    const range = document.createRange();
+    range.selectNodeContents(previewRef.current);
+    range.collapse(false);
+    return range;
+  };
+
   const insertImageIntoContent = (url: string) => {
     const snippet = `<figure style="margin:1.5rem 0;text-align:center"><img src="${url}" alt="ブログ画像" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08)"/><figcaption style="font-size:0.9rem;color:#4b5563;margin-top:0.5rem">画像の説明をここに記載</figcaption></figure>`;
     if (contentView === 'html' && htmlTextareaRef.current) {
@@ -330,10 +387,9 @@ const BlogAdmin: React.FC = () => {
 
     if (previewRef.current) {
       previewRef.current.focus();
-      const selection = previewSelectionRef.current;
-      if (selection && previewRef.current.contains(selection.commonAncestorContainer)) {
-        selection.deleteContents();
-        const range = selection.cloneRange();
+      const range = getPreviewInsertionRange();
+      if (range) {
+        range.deleteContents();
         const temp = document.createElement('div');
         temp.innerHTML = snippet;
         const fragment = document.createDocumentFragment();
@@ -351,7 +407,7 @@ const BlogAdmin: React.FC = () => {
             afterRange.setStartAfter(lastNode);
             afterRange.collapse(true);
             sel.addRange(afterRange);
-            previewSelectionRef.current = afterRange;
+            previewSelectionRef.current = afterRange.cloneRange();
           }
         }
 
@@ -637,6 +693,69 @@ const BlogAdmin: React.FC = () => {
               />
             </div>
             <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">本文に挿入する画像</p>
+                  <p className="text-xs text-gray-600">記事編集欄の直前で、挿入候補の画像をまとめて管理できます。カーソル位置にそのまま差し込み可能です。</p>
+                </div>
+                <div className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-bold text-brand-dark">
+                  📥 インポート → カーソル位置へ
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <textarea
+                    value={form.inlineImages}
+                    onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                    rows={3}
+                    placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
+                  />
+                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-4 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleInlineImagesUpload(e.target.files)}
+                    />
+                    <span className="font-semibold">ローカル画像を追加（複数可）</span>
+                    <span className="text-xs text-gray-500">アップロードすると下の候補リストに並びます</span>
+                  </label>
+                  <p className="text-xs text-gray-500 flex items-center gap-2">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-dark text-white text-[10px] font-bold">Tip</span>
+                    プレビューかHTMLでカーソルを置き、「本文へ挿入」からワンクリックで差し込めます。
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {inlineImageList.length === 0 && (
+                    <p className="text-xs text-gray-500 border border-dashed border-gray-200 rounded-lg px-3 py-4 text-center bg-gray-50">
+                      画像URLを入力するかローカルから追加すると、ここに候補が表示されます。
+                    </p>
+                  )}
+                  {inlineImageList.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {inlineImageList.map((url, idx) => (
+                        <div key={`${url}-${idx}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                          <img src={url} alt="本文画像" className="w-full h-28 object-cover" />
+                          <div className="px-3 py-2 space-y-1">
+                            <p className="text-xs text-gray-600 break-all leading-tight">{url.slice(0, 80)}{url.length > 80 ? '...' : ''}</p>
+                            <button
+                              type="button"
+                              onClick={() => insertImageIntoContent(url)}
+                              className="w-full text-xs font-bold text-brand-dark border border-brand-dark/30 rounded-md py-1 hover:bg-brand-dark hover:text-white transition-colors"
+                            >
+                              本文へ挿入
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">本文 / HTML</p>
@@ -686,6 +805,7 @@ const BlogAdmin: React.FC = () => {
                   contentEditable
                   suppressContentEditableWarning
                   onInput={handlePreviewInput}
+                  onFocus={restorePreviewSelection}
                   onMouseUp={savePreviewSelection}
                   onKeyUp={savePreviewSelection}
                   className="blog-preview border border-brand-dark/10 bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-brand-accent shadow-inner min-h-[240px]"
@@ -730,49 +850,6 @@ const BlogAdmin: React.FC = () => {
                   )}
                 </div>
                 <p className="text-xs text-gray-500 mt-1">URLかローカル画像を選択できます。アップロードした画像はそのまま記事一覧や本文のトップに使われます。</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">本文内画像</label>
-                <div className="space-y-2">
-                  <textarea
-                    value={form.inlineImages}
-                    onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                    rows={3}
-                    placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
-                  />
-                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-3 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => handleInlineImagesUpload(e.target.files)}
-                    />
-                    <span className="font-semibold">ローカル画像を追加（複数可）</span>
-                    <span className="text-xs text-gray-500">アップロードで本文候補にも追加されます</span>
-                  </label>
-                  {inlineImageList.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {inlineImageList.map((url, idx) => (
-                        <div key={`${url}-${idx}`} className="border border-gray-100 rounded-lg overflow-hidden bg-white shadow-sm">
-                          <img src={url} alt="本文画像" className="w-full h-28 object-cover" />
-                          <div className="px-3 py-2 space-y-1">
-                            <p className="text-xs text-gray-600 break-all leading-tight">{url.slice(0, 80)}{url.length > 80 ? '...' : ''}</p>
-                            <button
-                              type="button"
-                              onClick={() => insertImageIntoContent(url)}
-                              className="w-full text-xs font-bold text-brand-dark border border-brand-dark/30 rounded-md py-1 hover:bg-brand-dark hover:text-white transition-colors"
-                            >
-                              本文へ挿入
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">URL入力でもアップロードでもOK。プレビューやHTML欄でカーソルを置いた位置に「本文へ挿入」ボタンで直接配置できます。</p>
               </div>
             </div>
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>}
