@@ -321,14 +321,13 @@ const BlogAdmin: React.FC = () => {
     return categories;
   }, [blogPosts]);
 
-  const inlineImageList = useMemo(
-    () =>
-      form.inlineImages
-        .split(/\n|,/)
-        .map((line) => line.trim())
-        .filter(Boolean),
-    [form.inlineImages]
-  );
+  const inlineImageList = useMemo(() => {
+    const byLine = form.inlineImages.split(/\n/);
+    return byLine
+      .flatMap((line) => line.split(/,(?=\s*https?:)/))
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }, [form.inlineImages]);
 
   const readFileAsDataUrl = (file: File) =>
     new Promise<string>((resolve, reject) => {
