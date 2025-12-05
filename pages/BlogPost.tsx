@@ -7,6 +7,7 @@ const BlogPost: React.FC = () => {
   const { blogPosts } = useDataContext();
   const { id } = useParams<{ id: string }>();
   const post = blogPosts.find(p => p.id === id);
+  const eyeCatch = post?.eyeCatchUrl || post?.imageUrl;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -30,10 +31,62 @@ const BlogPost: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-24 pb-16">
+      <style>
+        {`
+          .blog-article h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f292f;
+            padding: 0.4rem 0.9rem;
+            background: linear-gradient(90deg, rgba(92, 203, 186, 0.16), rgba(15, 41, 47, 0.06));
+            border-left: 6px solid #0f292f;
+            border-radius: 0.8rem;
+            margin-top: 1.5rem;
+          }
+
+          .blog-article h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a4c54;
+            margin-top: 1.25rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 2px dashed rgba(26, 76, 84, 0.3);
+          }
+
+          .blog-article p,
+          .blog-article li {
+            line-height: 1.8;
+            color: #1f2937;
+          }
+
+          .blog-article ul {
+            list-style: disc;
+            padding-left: 1.4rem;
+            margin: 0.5rem 0;
+            display: grid;
+            gap: 0.35rem;
+          }
+
+          .blog-article strong {
+            color: #0f292f;
+            font-weight: 800;
+            background: linear-gradient(180deg, rgba(92, 203, 186, 0.35), rgba(92, 203, 186, 0));
+            padding: 0 0.15rem;
+          }
+
+          .blog-article blockquote {
+            border-left: 4px solid #5ccbba;
+            padding-left: 1rem;
+            color: #0f292f;
+            background: rgba(92, 203, 186, 0.08);
+            border-radius: 0.75rem;
+          }
+        `}
+      </style>
       {/* Breadcrumb */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 mb-8 text-xs text-gray-500">
-        <Link to="/" className="hover:text-brand-dark">ホーム</Link> &gt; 
-        <Link to="/blog" className="hover:text-brand-dark ml-1">ブログ</Link> &gt; 
+        <Link to="/" className="hover:text-brand-dark">ホーム</Link> &gt;
+        <Link to="/blog" className="hover:text-brand-dark ml-1">ブログ</Link> &gt;
         <span className="ml-1 text-gray-800">{post.category}</span>
       </div>
 
@@ -60,65 +113,38 @@ const BlogPost: React.FC = () => {
         </div>
 
         {/* Featured Image */}
-        <div className="mb-12 rounded-2xl overflow-hidden shadow-lg">
-            <img src={post.imageUrl} alt={post.title} className="w-full h-auto object-cover" />
-        </div>
+        {eyeCatch && (
+          <div className="mb-12 rounded-2xl overflow-hidden shadow-lg">
+              <img src={eyeCatch} alt={post.title} className="w-full h-auto object-cover" />
+          </div>
+        )}
 
-        {/* Content Body - Simulating rich text with hardcoded styling for the demo */}
-        <div className="prose prose-lg max-w-none text-gray-700">
-            
-            {/* Lead Block */}
+        {/* Content Body - render saved HTML so画像も本文に出る */}
+        <div className="blog-article prose prose-lg max-w-none text-gray-700">
             <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-brand-accent mb-10">
                 <p className="font-medium text-gray-800 m-0">
                     {post.excerpt}
                 </p>
             </div>
 
-            <p className="mb-8 leading-relaxed">
-                {post.content}
-                ここにさらに詳細な本文が続きます。AI技術の進化は、私たちの働き方を根本から変えようとしています。従来、専門的なスキルが必要だったタスクも、AIツールの支援を受けることで、誰でも効率的に実行できるようになりました。
-            </p>
+            <div
+              className="prose prose-lg max-w-none text-gray-700"
+              dangerouslySetInnerHTML={{ __html: post.content || '<p>本文がまだありません。</p>' }}
+            />
 
-            <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6 pb-2 border-b border-gray-200">
-                なぜAI自動化が必要なのか
-            </h2>
-            <p className="mb-6 leading-relaxed">
-                現代のビジネス環境では、スピードと効率性が競争力の鍵となっています。定型的な作業に時間を取られることで、本来注力すべき創造的な業務や戦略的な意思決定に十分な時間を割けないという問題が生じています。
-            </p>
-
-            <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6 pb-2 border-b border-gray-200">
-                具体的な活用シーン
-            </h2>
-            <p className="mb-6 leading-relaxed">
-                AI自動化は、データ入力、レポート作成、メール対応、スケジュール管理など、様々な業務に適用できます。特に、繰り返し行われる作業や、一定のルールに基づいて処理できる業務において、大きな効果を発揮します。
-            </p>
-
-             <div className="bg-gray-50 p-8 rounded-xl my-8">
-                <h3 className="flex items-center text-xl font-bold text-gray-900 mb-4">
-                    <span className="text-brand-accent mr-2">💡</span> 実践のポイント
-                </h3>
-                <ul className="space-y-3">
-                    <li className="flex items-start">
-                        <span className="text-green-500 mr-2">✔</span>
-                        <span>小さな業務から始めて、徐々に範囲を広げていく</span>
-                    </li>
-                    <li className="flex items-start">
-                        <span className="text-green-500 mr-2">✔</span>
-                        <span>効果測定を行い、改善を繰り返す</span>
-                    </li>
-                    <li className="flex items-start">
-                        <span className="text-green-500 mr-2">✔</span>
-                        <span>チーム全体で知識を共有し、活用を促進する</span>
-                    </li>
-                </ul>
-             </div>
-
-            <h2 className="text-2xl font-bold text-gray-900 mt-12 mb-6 pb-2 border-b border-gray-200">
-                まとめ
-            </h2>
-            <p className="leading-relaxed">
-                AI自動化は、もはや大企業だけのものではありません。適切な知識とツールがあれば、誰でも業務効率化を実現できます。まずは小さな一歩から始めて、徐々にスキルを磨いていきましょう。
-            </p>
+            {post.inlineImages && post.inlineImages.length > 0 && (
+              <div className="mt-10 space-y-4">
+                <h3 className="text-xl font-bold text-gray-900">記事内画像プレビュー</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {post.inlineImages.map((url) => (
+                    <div key={url} className="overflow-hidden rounded-xl border border-gray-100 shadow-sm bg-white">
+                      <img src={url} alt={post.title} className="w-full h-auto object-cover" />
+                      <p className="text-xs text-gray-600 px-3 py-2 break-all">{url}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
 
         {/* Tags */}
@@ -156,7 +182,7 @@ const BlogPost: React.FC = () => {
                 {relatedPosts.map(rp => (
                     <Link to={`/blog/${rp.id}`} key={rp.id} className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all">
                         <div className="h-40 overflow-hidden">
-                             <img src={rp.imageUrl} alt={rp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                             <img src={rp.eyeCatchUrl || rp.imageUrl} alt={rp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </div>
                         <div className="p-5">
                             <span className="text-xs text-gray-400 mb-2 block">{rp.date}</span>

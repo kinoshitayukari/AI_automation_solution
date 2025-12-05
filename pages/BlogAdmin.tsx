@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pencil, PlusCircle, Save, Trash2 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
 import { useDataContext } from '../components/DataContext';
@@ -35,6 +35,8 @@ type BlogFormState = {
   content: string;
   tags: string;
   imageUrl: string;
+  eyeCatchUrl: string;
+  inlineImages: string;
   readTime: string;
 };
 
@@ -45,6 +47,8 @@ const defaultFormState: BlogFormState = {
   content: '',
   tags: '',
   imageUrl: 'https://picsum.photos/id/180/800/450',
+  eyeCatchUrl: 'https://picsum.photos/id/180/1200/630',
+  inlineImages: '',
   readTime: '5分',
 };
 
@@ -57,6 +61,87 @@ const BlogAdmin: React.FC = () => {
   const [geminiApiKey, setGeminiApiKey] = useState<string>(GEMINI_API_KEY || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [stepOutput, setStepOutput] = useState<StepOutput>({});
+  const [contentView, setContentView] = useState<'html' | 'preview'>('preview');
+  const [activePanel, setActivePanel] = useState<'form' | 'list'>('form');
+  const previewRef = useRef<HTMLDivElement | null>(null);
+  const previewSelectionRef = useRef<Range | null>(null);
+  const htmlTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const htmlSelectionRef = useRef<{ start: number; end: number } | null>(null);
+
+  const handleContentUpdate = (content: string) => {
+    setForm((prev) => ({ ...prev, content }));
+  };
+
+  const handlePreviewInput = () => {
+    savePreviewSelection();
+    const nextContent = previewRef.current?.innerHTML ?? '';
+    handleContentUpdate(nextContent);
+  };
+
+  const savePreviewSelection = () => {
+    if (typeof window === 'undefined') return;
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      if (previewRef.current?.contains(range.commonAncestorContainer)) {
+        previewSelectionRef.current = range.cloneRange();
+      }
+    }
+  };
+
+  const saveHtmlSelection = () => {
+    if (htmlTextareaRef.current) {
+      htmlSelectionRef.current = {
+        start: htmlTextareaRef.current.selectionStart,
+        end: htmlTextareaRef.current.selectionEnd,
+      };
+    }
+  };
+
+  const restorePreviewSelection = () => {
+    if (typeof window === 'undefined') return;
+    const saved = previewSelectionRef.current;
+    if (saved && previewRef.current?.contains(saved.commonAncestorContainer)) {
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(saved.cloneRange());
+    }
+  };
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const handleSelectionChange = () => {
+      if (typeof window === 'undefined') return;
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (previewRef.current?.contains(range.commonAncestorContainer)) {
+          previewSelectionRef.current = range.cloneRange();
+        }
+      }
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, []);
+
+  useEffect(() => {
+    if (contentView === 'preview') {
+      requestAnimationFrame(() => restorePreviewSelection());
+    }
+    if (contentView === 'html' && htmlTextareaRef.current) {
+      const textarea = htmlTextareaRef.current;
+      requestAnimationFrame(() => {
+        const cursor = htmlSelectionRef.current ?? {
+          start: textarea.selectionStart ?? textarea.value.length,
+          end: textarea.selectionEnd ?? textarea.value.length,
+        };
+        textarea.focus();
+        textarea.setSelectionRange(cursor.start, cursor.end);
+      });
+    }
+  }, [contentView]);
 
   const extractJson = <T,>(text: string): T => {
     const cleaned = text.replace(/```json|```/g, '').trim();
@@ -174,7 +259,12 @@ const BlogAdmin: React.FC = () => {
         ? blogPosts.find((post) => post.id === editingId)?.date || new Date().toISOString().slice(0, 10)
         : new Date().toISOString().slice(0, 10),
       readTime: form.readTime || '5分',
-      imageUrl: form.imageUrl || 'https://picsum.photos/id/180/800/450',
+      imageUrl: form.imageUrl || form.eyeCatchUrl || 'https://picsum.photos/id/180/800/450',
+      eyeCatchUrl: form.eyeCatchUrl || form.imageUrl || 'https://picsum.photos/id/180/1200/630',
+      inlineImages: form.inlineImages
+        .split(/\n|,/)
+        .map((line) => line.trim())
+        .filter(Boolean),
     };
 
     if (editingId) {
@@ -196,6 +286,8 @@ const BlogAdmin: React.FC = () => {
       content: post.content,
       tags: post.tags.join(', '),
       imageUrl: post.imageUrl,
+      eyeCatchUrl: post.eyeCatchUrl || post.imageUrl,
+      inlineImages: (post.inlineImages || []).join('\n'),
       readTime: post.readTime,
     });
     setEditingId(post.id);
@@ -221,16 +313,203 @@ const BlogAdmin: React.FC = () => {
     return categories;
   }, [blogPosts]);
 
+  const inlineImageList = useMemo(
+    () =>
+      form.inlineImages
+        .split(/\n|,/)
+        .map((line) => line.trim())
+        .filter(Boolean),
+    [form.inlineImages]
+  );
+
+  const readFileAsDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('ファイルの読み込みに失敗しました'));
+      reader.readAsDataURL(file);
+    });
+
+  const handleEyeCatchUpload = async (file?: File | null) => {
+    if (!file) return;
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setForm((prev) => ({ ...prev, eyeCatchUrl: dataUrl, imageUrl: dataUrl }));
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : '画像のアップロードに失敗しました。');
+    }
+  };
+
+  const handleInlineImagesUpload = async (files?: FileList | null) => {
+    if (!files || files.length === 0) return;
+    try {
+      const uploads = await Promise.all(Array.from(files).map((file) => readFileAsDataUrl(file)));
+      const merged = [...inlineImageList, ...uploads];
+      setForm((prev) => ({ ...prev, inlineImages: merged.join('\n') }));
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : '本文画像のアップロードに失敗しました。');
+    }
+  };
+
+  const getPreviewInsertionRange = () => {
+    if (!previewRef.current || typeof document === 'undefined') return null;
+    const savedRange = previewSelectionRef.current?.cloneRange();
+    if (savedRange && previewRef.current.contains(savedRange.commonAncestorContainer)) {
+      return savedRange;
+    }
+    const range = document.createRange();
+    range.selectNodeContents(previewRef.current);
+    range.collapse(false);
+    return range;
+  };
+
+  const insertImageIntoContent = (url: string) => {
+    const snippet = `<figure style="margin:1.5rem 0;text-align:center"><img src="${url}" alt="ブログ画像" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08)"/><figcaption style="font-size:0.9rem;color:#4b5563;margin-top:0.5rem">画像の説明をここに記載</figcaption></figure>`;
+    if (contentView === 'html' && htmlTextareaRef.current) {
+      const textarea = htmlTextareaRef.current;
+      const currentSelection = htmlSelectionRef.current ?? {
+        start: textarea.selectionStart ?? textarea.value.length,
+        end: textarea.selectionEnd ?? textarea.value.length,
+      };
+      const nextValue =
+        textarea.value.slice(0, currentSelection.start) +
+        snippet +
+        textarea.value.slice(currentSelection.end);
+
+      handleContentUpdate(nextValue);
+      requestAnimationFrame(() => {
+        const caret = currentSelection.start + snippet.length;
+        textarea.focus();
+        textarea.setSelectionRange(caret, caret);
+      });
+      return;
+    }
+
+    if (previewRef.current) {
+      previewRef.current.focus();
+      const range = getPreviewInsertionRange();
+      if (range) {
+        range.deleteContents();
+        const temp = document.createElement('div');
+        temp.innerHTML = snippet;
+        const fragment = document.createDocumentFragment();
+        while (temp.firstChild) {
+          fragment.appendChild(temp.firstChild);
+        }
+        const lastNode = fragment.lastChild;
+        range.insertNode(fragment);
+
+        if (typeof window !== 'undefined' && lastNode) {
+          const sel = window.getSelection();
+          if (sel) {
+            sel.removeAllRanges();
+            const afterRange = document.createRange();
+            afterRange.setStartAfter(lastNode);
+            afterRange.collapse(true);
+            sel.addRange(afterRange);
+            previewSelectionRef.current = afterRange.cloneRange();
+          }
+        }
+
+        handleContentUpdate(previewRef.current.innerHTML);
+        return;
+      }
+    }
+
+    setForm((prev) => ({ ...prev, content: prev.content ? `${prev.content}\n${snippet}` : snippet }));
+  };
+
   return (
     <AdminGate title="ブログ管理" description="記事の作成・編集・削除が行えます。">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-          <div className="flex items-center gap-2 mb-4">
-            {editingId ? <Pencil className="text-brand-dark" /> : <PlusCircle className="text-brand-dark" />}
-            <h2 className="text-xl font-bold text-gray-900">{editingId ? '記事を編集' : '新規記事を追加'}</h2>
-          </div>
+      <style>
+        {`
+          .blog-preview h2 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0f292f;
+            padding: 0.35rem 0.75rem;
+            background: linear-gradient(90deg, rgba(92, 203, 186, 0.18), rgba(15, 41, 47, 0.06));
+            border-left: 6px solid #0f292f;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+          }
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          .blog-preview h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1a4c54;
+            margin-top: 0.75rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px dashed rgba(26, 76, 84, 0.3);
+          }
+
+          .blog-preview p,
+          .blog-preview li {
+            line-height: 1.8;
+            color: #1f2937;
+          }
+
+          .blog-preview ul {
+            list-style: disc;
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+            display: grid;
+            gap: 0.35rem;
+          }
+
+          .blog-preview strong {
+            color: #0f292f;
+            font-weight: 800;
+            background: linear-gradient(180deg, rgba(92, 203, 186, 0.35), rgba(92, 203, 186, 0));
+            padding: 0 0.15rem;
+          }
+
+          .blog-preview blockquote {
+            border-left: 4px solid #5ccbba;
+            padding-left: 1rem;
+            color: #0f292f;
+            background: rgba(92, 203, 186, 0.08);
+            border-radius: 0.75rem;
+          }
+        `}
+      </style>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-brand-dark font-bold">Blog Admin</p>
+            <h2 className="text-2xl font-bold text-gray-900">記事作成と一覧をワンタップで切替</h2>
+            <p className="text-sm text-gray-600">画像アップロード、本文プレビュー、生成支援を1画面で完結できます。</p>
+          </div>
+          <div className="inline-flex items-center bg-gray-100 rounded-xl p-1 text-sm font-bold border border-gray-200">
+            <button
+              type="button"
+              onClick={() => setActivePanel('form')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activePanel === 'form' ? 'bg-white shadow-sm text-brand-dark' : 'text-gray-700 hover:text-brand-dark'
+              }`}
+            >
+              ✏️ 記事作成 / 編集
+            </button>
+            <button
+              type="button"
+              onClick={() => setActivePanel('list')}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                activePanel === 'list' ? 'bg-white shadow-sm text-brand-dark' : 'text-gray-700 hover:text-brand-dark'
+              }`}
+            >
+              📚 記事一覧 / 進行状況
+            </button>
+          </div>
+        </div>
+
+        {activePanel === 'form' ? (
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+            <div className="flex items-center gap-2 mb-4">
+              {editingId ? <Pencil className="text-brand-dark" /> : <PlusCircle className="text-brand-dark" />}
+              <h2 className="text-xl font-bold text-gray-900">{editingId ? '記事を編集' : '新規記事を追加'}</h2>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:items-center md:gap-4">
                 <div className="md:col-span-2 flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
@@ -413,23 +692,165 @@ const BlogAdmin: React.FC = () => {
                 rows={2}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">本文</label>
-              <textarea
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                rows={4}
-              />
+            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">本文に挿入する画像</p>
+                  <p className="text-xs text-gray-600">記事編集欄の直前で、挿入候補の画像をまとめて管理できます。カーソル位置にそのまま差し込み可能です。</p>
+                </div>
+                <div className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-bold text-brand-dark">
+                  📥 インポート → カーソル位置へ
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <textarea
+                    value={form.inlineImages}
+                    onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                    rows={3}
+                    placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
+                  />
+                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-4 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => handleInlineImagesUpload(e.target.files)}
+                    />
+                    <span className="font-semibold">ローカル画像を追加（複数可）</span>
+                    <span className="text-xs text-gray-500">アップロードすると下の候補リストに並びます</span>
+                  </label>
+                  <p className="text-xs text-gray-500 flex items-center gap-2">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-brand-dark text-white text-[10px] font-bold">Tip</span>
+                    プレビューかHTMLでカーソルを置き、「本文へ挿入」からワンクリックで差し込めます。
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  {inlineImageList.length === 0 && (
+                    <p className="text-xs text-gray-500 border border-dashed border-gray-200 rounded-lg px-3 py-4 text-center bg-gray-50">
+                      画像URLを入力するかローカルから追加すると、ここに候補が表示されます。
+                    </p>
+                  )}
+                  {inlineImageList.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {inlineImageList.map((url, idx) => (
+                        <div key={`${url}-${idx}`} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                          <img src={url} alt="本文画像" className="w-full h-28 object-cover" />
+                          <div className="px-3 py-2 space-y-1">
+                            <p className="text-xs text-gray-600 break-all leading-tight">{url.slice(0, 80)}{url.length > 80 ? '...' : ''}</p>
+                            <button
+                              type="button"
+                              onClick={() => insertImageIntoContent(url)}
+                              className="w-full text-xs font-bold text-brand-dark border border-brand-dark/30 rounded-md py-1 hover:bg-brand-dark hover:text-white transition-colors"
+                            >
+                              本文へ挿入
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">メイン画像URL</label>
-              <input
-                type="text"
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              />
+            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">本文 / HTML</p>
+                  <p className="text-xs text-gray-600">HTMLを直接編集するか、装飾プレビューを見ながら内容を整えられます。</p>
+                </div>
+                <div className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-sm font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setContentView('preview')}
+                    className={`px-3 py-2 rounded-md transition-colors ${
+                      contentView === 'preview'
+                        ? 'bg-brand-dark text-white shadow-sm'
+                        : 'text-gray-700 hover:text-brand-dark'
+                    }`}
+                  >
+                    プレビュー
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContentView('html')}
+                    className={`px-3 py-2 rounded-md transition-colors ${
+                      contentView === 'html'
+                        ? 'bg-brand-dark text-white shadow-sm'
+                        : 'text-gray-700 hover:text-brand-dark'
+                    }`}
+                  >
+                    HTML
+                  </button>
+                </div>
+              </div>
+
+              {contentView === 'html' ? (
+                <textarea
+                  ref={htmlTextareaRef}
+                  value={form.content}
+                  onChange={(e) => handleContentUpdate(e.target.value)}
+                  onSelect={saveHtmlSelection}
+                  onClick={saveHtmlSelection}
+                  onKeyUp={saveHtmlSelection}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent font-mono text-sm"
+                  rows={10}
+                  placeholder="<h2>大見出し</h2>\n<p>本文...</p>"
+                />
+              ) : (
+                <div
+                  ref={previewRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={handlePreviewInput}
+                  onFocus={restorePreviewSelection}
+                  onMouseUp={savePreviewSelection}
+                  onKeyUp={savePreviewSelection}
+                  className="blog-preview border border-brand-dark/10 bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-brand-accent shadow-inner min-h-[240px]"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      form.content ||
+                      '<h2>大見出しの例</h2><p>ここに本文が入ります。プレビュー上でもテキストを直接編集できます。</p><h3>小見出しの例</h3><p>箇条書きや強調なども編集可能です。</p>',
+                  }}
+                />
+              )}
+              <p className="text-xs text-gray-600 flex items-center gap-2">
+                HTMLとプレビューは双方向に連動します。プレビュー上で見出しや本文を直接修正すると、HTMLにも即時反映されます。
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">アイキャッチ画像</label>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={form.eyeCatchUrl}
+                    onChange={(e) =>
+                      setForm({ ...form, eyeCatchUrl: e.target.value, imageUrl: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                    placeholder="URL または下のアップロードを利用"
+                  />
+                  <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-200 rounded-lg px-3 py-3 text-sm text-gray-600 cursor-pointer hover:border-brand-accent hover:text-brand-dark transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleEyeCatchUpload(e.target.files?.[0])}
+                    />
+                    <span className="font-semibold">ローカル画像をアップロード</span>
+                    <span className="text-xs text-gray-500">1200x630 程度を推奨</span>
+                  </label>
+                  {form.eyeCatchUrl && (
+                    <div className="rounded-xl overflow-hidden border border-gray-100 shadow-sm">
+                      <img src={form.eyeCatchUrl} alt="アイキャッチ" className="w-full h-auto object-cover" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">URLかローカル画像を選択できます。アップロードした画像はそのまま記事一覧や本文のトップに使われます。</p>
+              </div>
             </div>
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>}
 
@@ -464,53 +885,68 @@ const BlogAdmin: React.FC = () => {
             </div>
           </form>
         </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-1 bg-white border border-gray-100 rounded-2xl shadow-sm p-4 h-fit">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">カテゴリ別記事数</h3>
+              <div className="space-y-2 text-sm text-gray-700">
+                {Object.entries(stats).map(([category, count]) => (
+                  <div key={category} className="flex items-center justify-between">
+                    <span>{category}</span>
+                    <span className="font-bold">{count}件</span>
+                  </div>
+                ))}
+                {blogPosts.length === 0 && <p className="text-gray-500">まだ記事がありません。</p>}
+              </div>
+            </div>
 
-        <div className="space-y-4">
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">カテゴリ別記事数</h3>
-            <div className="space-y-2 text-sm text-gray-700">
-              {Object.entries(stats).map(([category, count]) => (
-                <div key={category} className="flex items-center justify-between">
-                  <span>{category}</span>
-                  <span className="font-bold">{count}件</span>
-                </div>
-              ))}
-              {blogPosts.length === 0 && <p className="text-gray-500">まだ記事がありません。</p>}
+            <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">記事一覧</h3>
+                <p className="text-xs text-gray-500">クリックで即編集できます。</p>
+              </div>
+              <div className="space-y-3 max-h-[32rem] overflow-y-auto pr-1">
+                {blogPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="border border-gray-100 rounded-lg p-3 flex items-start justify-between gap-3 bg-gray-50"
+                  >
+                    <div className="flex gap-3">
+                      <img
+                        src={post.eyeCatchUrl || post.imageUrl}
+                        alt={post.title}
+                        className="w-20 h-16 object-cover rounded-md border border-gray-100"
+                      />
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">{post.category} ・ {post.date}</p>
+                        <p className="font-semibold text-gray-900 leading-tight">{post.title}</p>
+                        <p className="text-xs text-gray-600 line-clamp-2">{post.excerpt}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm">
+                      <button
+                        onClick={() => {
+                          handleEdit(post);
+                          setActivePanel('form');
+                        }}
+                        className="text-brand-dark hover:underline flex items-center gap-1"
+                      >
+                        <Pencil size={16} /> 編集
+                      </button>
+                      <button
+                        onClick={() => handleRemove(post.id)}
+                        className="text-red-600 hover:underline flex items-center gap-1"
+                      >
+                        <Trash2 size={16} /> 削除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {blogPosts.length === 0 && <p className="text-sm text-gray-500">まだ記事がありません。</p>}
+              </div>
             </div>
           </div>
-
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">記事一覧</h3>
-            <div className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
-              {blogPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="border border-gray-100 rounded-lg p-3 flex items-start justify-between gap-3 bg-gray-50"
-                >
-                  <div>
-                    <p className="text-xs text-gray-500 mb-1">{post.category} ・ {post.date}</p>
-                    <p className="font-semibold text-gray-900 leading-tight">{post.title}</p>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <button
-                      onClick={() => handleEdit(post)}
-                      className="text-brand-dark hover:underline flex items-center gap-1"
-                    >
-                      <Pencil size={16} /> 編集
-                    </button>
-                    <button
-                      onClick={() => handleRemove(post.id)}
-                      className="text-red-600 hover:underline flex items-center gap-1"
-                    >
-                      <Trash2 size={16} /> 削除
-                    </button>
-                  </div>
-                </div>
-              ))}
-              {blogPosts.length === 0 && <p className="text-sm text-gray-500">まだ記事がありません。</p>}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </AdminGate>
   );

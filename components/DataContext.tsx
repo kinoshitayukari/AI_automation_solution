@@ -20,7 +20,9 @@ const tableCreateSql: Record<string, string> = {
       author_avatar text,
       date timestamptz,
       read_time text,
-      image_url text
+      image_url text,
+      eye_catch_url text,
+      inline_image_urls text[]
     );
   `,
   [CONTACT_TABLE]: `
@@ -113,6 +115,8 @@ const withTableHint = (error: string | null, table: string) => {
             date: row.date,
             readTime: row.read_time,
             imageUrl: row.image_url,
+            eyeCatchUrl: row.eye_catch_url || row.image_url,
+            inlineImages: row.inline_image_urls ?? [],
           }))
         );
       } else {
@@ -130,6 +134,8 @@ const withTableHint = (error: string | null, table: string) => {
             date: post.date,
             read_time: post.readTime,
             image_url: post.imageUrl,
+            eye_catch_url: post.eyeCatchUrl || post.imageUrl,
+            inline_image_urls: post.inlineImages ?? [],
           }))
         );
 
@@ -182,6 +188,8 @@ const withTableHint = (error: string | null, table: string) => {
       date: post.date,
       read_time: post.readTime,
       image_url: post.imageUrl,
+      eye_catch_url: post.eyeCatchUrl || post.imageUrl,
+      inline_image_urls: post.inlineImages ?? [],
     });
 
     if (error) {
@@ -206,6 +214,8 @@ const withTableHint = (error: string | null, table: string) => {
       date: target.date,
       read_time: target.readTime,
       image_url: target.imageUrl,
+      eye_catch_url: target.eyeCatchUrl || target.imageUrl,
+      inline_image_urls: target.inlineImages ?? [],
     });
 
     if (error) {

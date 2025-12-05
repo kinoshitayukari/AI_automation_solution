@@ -14,6 +14,8 @@ export const BLOG_POSTS: BlogPost[] = [
     date: "2025-01-15",
     readTime: "5分",
     imageUrl: "https://picsum.photos/id/48/800/450",
+    eyeCatchUrl: "https://picsum.photos/id/48/1200/630",
+    inlineImages: ["https://picsum.photos/id/11/900/500", "https://picsum.photos/id/12/900/500"],
   },
   {
     id: "e7fe9113-8ed1-4bc3-8e66-7f156170e732",
@@ -26,6 +28,8 @@ export const BLOG_POSTS: BlogPost[] = [
     date: "2025-01-12",
     readTime: "8分",
     imageUrl: "https://picsum.photos/id/3/800/450",
+    eyeCatchUrl: "https://picsum.photos/id/3/1200/630",
+    inlineImages: ["https://picsum.photos/id/13/900/500"],
   },
   {
     id: "a39ea2f5-0552-4da1-b9cd-88f9d193d2e2",
@@ -38,6 +42,8 @@ export const BLOG_POSTS: BlogPost[] = [
     date: "2025-01-10",
     readTime: "10分",
     imageUrl: "https://picsum.photos/id/60/800/450",
+    eyeCatchUrl: "https://picsum.photos/id/60/1200/630",
+    inlineImages: ["https://picsum.photos/id/61/900/500", "https://picsum.photos/id/62/900/500"],
   },
   {
     id: "a912542c-8308-4488-8bf9-c134521d8760",
@@ -50,6 +56,8 @@ export const BLOG_POSTS: BlogPost[] = [
     date: "2025-01-08",
     readTime: "7分",
     imageUrl: "https://picsum.photos/id/180/800/450",
+    eyeCatchUrl: "https://picsum.photos/id/180/1200/630",
+    inlineImages: ["https://picsum.photos/id/181/900/500"],
   },
   {
     id: "81780d47-75b4-495c-b4d3-2a790b8853db",
@@ -62,6 +70,8 @@ export const BLOG_POSTS: BlogPost[] = [
     date: "2025-01-05",
     readTime: "6分",
     imageUrl: "https://picsum.photos/id/119/800/450",
+    eyeCatchUrl: "https://picsum.photos/id/119/1200/630",
+    inlineImages: ["https://picsum.photos/id/120/900/500"],
   },
   {
     id: "55d5448b-4726-454f-a60e-5033b64f6757",
@@ -74,6 +84,8 @@ export const BLOG_POSTS: BlogPost[] = [
     date: "2025-01-03",
     readTime: "5分",
     imageUrl: "https://picsum.photos/id/20/800/450",
+    eyeCatchUrl: "https://picsum.photos/id/20/1200/630",
+    inlineImages: ["https://picsum.photos/id/21/900/500"],
   },
 ];
 
