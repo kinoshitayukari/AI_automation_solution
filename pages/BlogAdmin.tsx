@@ -4,6 +4,8 @@ import AdminGate from '../components/AdminGate';
 import { useDataContext } from '../components/DataContext';
 import { BlogPost } from '../types';
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
 type BlogFormState = {
   title: string;
   category: string;
@@ -29,6 +31,78 @@ const BlogAdmin: React.FC = () => {
   const [form, setForm] = useState<BlogFormState>(defaultFormState);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const parseGeneratedJson = (text: string) => {
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(cleaned) as {
+      title: string;
+      excerpt: string;
+      content: string;
+      tags?: string[];
+      readTime?: string;
+      category?: string;
+      imageUrl?: string;
+    };
+  };
+
+  const generateWithGemini = async () => {
+    if (!keywords.trim()) {
+      setError('キーワードを入力してください。');
+      return;
+    }
+
+    if (!GEMINI_API_KEY) {
+      setError('Gemini APIキーが設定されていません。.env.local に VITE_GEMINI_API_KEY を設定してください。');
+      return;
+    }
+
+    setIsGenerating(true);
+    setError('');
+
+    try {
+      const prompt = `あなたはAI自動化に詳しい日本語ブログの編集者です。以下のキーワードを軸に、読者に価値ある記事の下書きをJSON形式で作成してください。\n\n- キーワード: ${keywords}\n- トンマナ: 明るく、具体例を入れながら専門性を保つ\n- カテゴリは「基礎知識」「実践テクニック」「ツール活用」から最適なものを選択\n- 結果は次のJSONで返してください。\n{\n  "title": "タイトル",\n  "excerpt": "リード文",\n  "content": "見出し付きの本文(約600-800文字)",\n  "tags": ["#タグ1", "#タグ2"],\n  "readTime": "5分",\n  "category": "カテゴリ",\n  "imageUrl": "https://..."\n}`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+        }
+      );
+
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || 'Gemini APIの呼び出しに失敗しました。');
+      }
+
+      const data = await response.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+
+      if (!text) {
+        throw new Error('Gemini APIから有効な応答が得られませんでした。');
+      }
+
+      const generated = parseGeneratedJson(text);
+      setForm((prev) => ({
+        ...prev,
+        title: generated.title || prev.title,
+        excerpt: generated.excerpt || prev.excerpt,
+        content: generated.content || prev.content,
+        tags: generated.tags?.join(', ') || prev.tags,
+        readTime: generated.readTime || prev.readTime,
+        category: generated.category || prev.category,
+        imageUrl: generated.imageUrl || prev.imageUrl,
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '生成中にエラーが発生しました。';
+      setError(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -109,6 +183,31 @@ const BlogAdmin: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">キーワードからAI下書きを生成</label>
+                  <input
+                    type="text"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    placeholder="例: AI自動化 ブログ運用 スケーリング"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={generateWithGemini}
+                  disabled={isGenerating}
+                  className="whitespace-nowrap px-4 py-3 rounded-lg font-bold text-white bg-gradient-to-r from-brand-dark to-brand-accent shadow-sm disabled:opacity-70"
+                >
+                  {isGenerating ? '生成中...' : 'AIで下書きを作成'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                キーワードを入力すると Gemini がタイトル・リード文・本文・タグを提案し、フォームに自動で反映します。
+              </p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">タイトル</label>
