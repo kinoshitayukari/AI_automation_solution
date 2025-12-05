@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Pencil, PlusCircle, Save, Trash2 } from 'lucide-react';
 import AdminGate from '../components/AdminGate';
 import { useDataContext } from '../components/DataContext';
@@ -57,6 +57,17 @@ const BlogAdmin: React.FC = () => {
   const [geminiApiKey, setGeminiApiKey] = useState<string>(GEMINI_API_KEY || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [stepOutput, setStepOutput] = useState<StepOutput>({});
+  const [contentView, setContentView] = useState<'html' | 'preview'>('preview');
+  const previewRef = useRef<HTMLDivElement | null>(null);
+
+  const handleContentUpdate = (content: string) => {
+    setForm((prev) => ({ ...prev, content }));
+  };
+
+  const handlePreviewInput = () => {
+    const nextContent = previewRef.current?.innerHTML ?? '';
+    handleContentUpdate(nextContent);
+  };
 
   const extractJson = <T,>(text: string): T => {
     const cleaned = text.replace(/```json|```/g, '').trim();
@@ -223,6 +234,58 @@ const BlogAdmin: React.FC = () => {
 
   return (
     <AdminGate title="ブログ管理" description="記事の作成・編集・削除が行えます。">
+      <style>
+        {`
+          .blog-preview h2 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #0f292f;
+            padding: 0.35rem 0.75rem;
+            background: linear-gradient(90deg, rgba(92, 203, 186, 0.18), rgba(15, 41, 47, 0.06));
+            border-left: 6px solid #0f292f;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+          }
+
+          .blog-preview h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1a4c54;
+            margin-top: 0.75rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px dashed rgba(26, 76, 84, 0.3);
+          }
+
+          .blog-preview p,
+          .blog-preview li {
+            line-height: 1.8;
+            color: #1f2937;
+          }
+
+          .blog-preview ul {
+            list-style: disc;
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+            display: grid;
+            gap: 0.35rem;
+          }
+
+          .blog-preview strong {
+            color: #0f292f;
+            font-weight: 800;
+            background: linear-gradient(180deg, rgba(92, 203, 186, 0.35), rgba(92, 203, 186, 0));
+            padding: 0 0.15rem;
+          }
+
+          .blog-preview blockquote {
+            border-left: 4px solid #5ccbba;
+            padding-left: 1rem;
+            color: #0f292f;
+            background: rgba(92, 203, 186, 0.08);
+            border-radius: 0.75rem;
+          }
+        `}
+      </style>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -413,14 +476,63 @@ const BlogAdmin: React.FC = () => {
                 rows={2}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">本文</label>
-              <textarea
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                rows={4}
-              />
+            <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">本文 / HTML</p>
+                  <p className="text-xs text-gray-600">HTMLを直接編集するか、装飾プレビューを見ながら内容を整えられます。</p>
+                </div>
+                <div className="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 p-1 text-sm font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setContentView('preview')}
+                    className={`px-3 py-2 rounded-md transition-colors ${
+                      contentView === 'preview'
+                        ? 'bg-brand-dark text-white shadow-sm'
+                        : 'text-gray-700 hover:text-brand-dark'
+                    }`}
+                  >
+                    プレビュー
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContentView('html')}
+                    className={`px-3 py-2 rounded-md transition-colors ${
+                      contentView === 'html'
+                        ? 'bg-brand-dark text-white shadow-sm'
+                        : 'text-gray-700 hover:text-brand-dark'
+                    }`}
+                  >
+                    HTML
+                  </button>
+                </div>
+              </div>
+
+              {contentView === 'html' ? (
+                <textarea
+                  value={form.content}
+                  onChange={(e) => handleContentUpdate(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent font-mono text-sm"
+                  rows={10}
+                  placeholder="<h2>大見出し</h2>\n<p>本文...</p>"
+                />
+              ) : (
+                <div
+                  ref={previewRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  onInput={handlePreviewInput}
+                  className="blog-preview border border-brand-dark/10 bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-brand-accent shadow-inner min-h-[240px]"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      form.content ||
+                      '<h2>大見出しの例</h2><p>ここに本文が入ります。プレビュー上でもテキストを直接編集できます。</p><h3>小見出しの例</h3><p>箇条書きや強調なども編集可能です。</p>',
+                  }}
+                />
+              )}
+              <p className="text-xs text-gray-600 flex items-center gap-2">
+                HTMLとプレビューは双方向に連動します。プレビュー上で見出しや本文を直接修正すると、HTMLにも即時反映されます。
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">メイン画像URL</label>
