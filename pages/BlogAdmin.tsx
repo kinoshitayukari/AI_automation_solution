@@ -64,6 +64,9 @@ const BlogAdmin: React.FC = () => {
   const [contentView, setContentView] = useState<'html' | 'preview'>('preview');
   const [activePanel, setActivePanel] = useState<'form' | 'list'>('form');
   const previewRef = useRef<HTMLDivElement | null>(null);
+  const previewSelectionRef = useRef<Range | null>(null);
+  const htmlTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const htmlSelectionRef = useRef<{ start: number; end: number } | null>(null);
 
   const handleContentUpdate = (content: string) => {
     setForm((prev) => ({ ...prev, content }));
@@ -72,6 +75,27 @@ const BlogAdmin: React.FC = () => {
   const handlePreviewInput = () => {
     const nextContent = previewRef.current?.innerHTML ?? '';
     handleContentUpdate(nextContent);
+    savePreviewSelection();
+  };
+
+  const savePreviewSelection = () => {
+    if (typeof window === 'undefined') return;
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      if (previewRef.current?.contains(range.commonAncestorContainer)) {
+        previewSelectionRef.current = range;
+      }
+    }
+  };
+
+  const saveHtmlSelection = () => {
+    if (htmlTextareaRef.current) {
+      htmlSelectionRef.current = {
+        start: htmlTextareaRef.current.selectionStart,
+        end: htmlTextareaRef.current.selectionEnd,
+      };
+    }
   };
 
   const extractJson = <T,>(text: string): T => {
@@ -284,8 +308,59 @@ const BlogAdmin: React.FC = () => {
 
   const insertImageIntoContent = (url: string) => {
     const snippet = `<figure style="margin:1.5rem 0;text-align:center"><img src="${url}" alt="ブログ画像" style="max-width:100%;height:auto;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.08)"/><figcaption style="font-size:0.9rem;color:#4b5563;margin-top:0.5rem">画像の説明をここに記載</figcaption></figure>`;
+    if (contentView === 'html' && htmlTextareaRef.current) {
+      const textarea = htmlTextareaRef.current;
+      const currentSelection = htmlSelectionRef.current ?? {
+        start: textarea.selectionStart ?? textarea.value.length,
+        end: textarea.selectionEnd ?? textarea.value.length,
+      };
+      const nextValue =
+        textarea.value.slice(0, currentSelection.start) +
+        snippet +
+        textarea.value.slice(currentSelection.end);
+
+      handleContentUpdate(nextValue);
+      requestAnimationFrame(() => {
+        const caret = currentSelection.start + snippet.length;
+        textarea.focus();
+        textarea.setSelectionRange(caret, caret);
+      });
+      return;
+    }
+
+    if (previewRef.current) {
+      previewRef.current.focus();
+      const selection = previewSelectionRef.current;
+      if (selection && previewRef.current.contains(selection.commonAncestorContainer)) {
+        selection.deleteContents();
+        const range = selection.cloneRange();
+        const temp = document.createElement('div');
+        temp.innerHTML = snippet;
+        const fragment = document.createDocumentFragment();
+        while (temp.firstChild) {
+          fragment.appendChild(temp.firstChild);
+        }
+        const lastNode = fragment.lastChild;
+        range.insertNode(fragment);
+
+        if (typeof window !== 'undefined' && lastNode) {
+          const sel = window.getSelection();
+          if (sel) {
+            sel.removeAllRanges();
+            const afterRange = document.createRange();
+            afterRange.setStartAfter(lastNode);
+            afterRange.collapse(true);
+            sel.addRange(afterRange);
+            previewSelectionRef.current = afterRange;
+          }
+        }
+
+        handleContentUpdate(previewRef.current.innerHTML);
+        return;
+      }
+    }
+
     setForm((prev) => ({ ...prev, content: prev.content ? `${prev.content}\n${snippet}` : snippet }));
-    setContentView('preview');
   };
 
   return (
@@ -595,8 +670,12 @@ const BlogAdmin: React.FC = () => {
 
               {contentView === 'html' ? (
                 <textarea
+                  ref={htmlTextareaRef}
                   value={form.content}
                   onChange={(e) => handleContentUpdate(e.target.value)}
+                  onSelect={saveHtmlSelection}
+                  onClick={saveHtmlSelection}
+                  onKeyUp={saveHtmlSelection}
                   className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent font-mono text-sm"
                   rows={10}
                   placeholder="<h2>大見出し</h2>\n<p>本文...</p>"
@@ -607,6 +686,8 @@ const BlogAdmin: React.FC = () => {
                   contentEditable
                   suppressContentEditableWarning
                   onInput={handlePreviewInput}
+                  onMouseUp={savePreviewSelection}
+                  onKeyUp={savePreviewSelection}
                   className="blog-preview border border-brand-dark/10 bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-brand-accent shadow-inner min-h-[240px]"
                   dangerouslySetInnerHTML={{
                     __html:
@@ -691,7 +772,7 @@ const BlogAdmin: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">URL入力でもアップロードでもOK。下の「本文へ挿入」でプレビューに直接配置できます。</p>
+                <p className="text-xs text-gray-500 mt-1">URL入力でもアップロードでもOK。プレビューやHTML欄でカーソルを置いた位置に「本文へ挿入」ボタンで直接配置できます。</p>
               </div>
             </div>
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>}

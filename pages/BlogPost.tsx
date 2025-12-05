@@ -31,10 +31,62 @@ const BlogPost: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pt-24 pb-16">
+      <style>
+        {`
+          .blog-article h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f292f;
+            padding: 0.4rem 0.9rem;
+            background: linear-gradient(90deg, rgba(92, 203, 186, 0.16), rgba(15, 41, 47, 0.06));
+            border-left: 6px solid #0f292f;
+            border-radius: 0.8rem;
+            margin-top: 1.5rem;
+          }
+
+          .blog-article h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a4c54;
+            margin-top: 1.25rem;
+            padding-bottom: 0.35rem;
+            border-bottom: 2px dashed rgba(26, 76, 84, 0.3);
+          }
+
+          .blog-article p,
+          .blog-article li {
+            line-height: 1.8;
+            color: #1f2937;
+          }
+
+          .blog-article ul {
+            list-style: disc;
+            padding-left: 1.4rem;
+            margin: 0.5rem 0;
+            display: grid;
+            gap: 0.35rem;
+          }
+
+          .blog-article strong {
+            color: #0f292f;
+            font-weight: 800;
+            background: linear-gradient(180deg, rgba(92, 203, 186, 0.35), rgba(92, 203, 186, 0));
+            padding: 0 0.15rem;
+          }
+
+          .blog-article blockquote {
+            border-left: 4px solid #5ccbba;
+            padding-left: 1rem;
+            color: #0f292f;
+            background: rgba(92, 203, 186, 0.08);
+            border-radius: 0.75rem;
+          }
+        `}
+      </style>
       {/* Breadcrumb */}
       <div className="max-w-3xl mx-auto px-4 sm:px-6 mb-8 text-xs text-gray-500">
-        <Link to="/" className="hover:text-brand-dark">ホーム</Link> &gt; 
-        <Link to="/blog" className="hover:text-brand-dark ml-1">ブログ</Link> &gt; 
+        <Link to="/" className="hover:text-brand-dark">ホーム</Link> &gt;
+        <Link to="/blog" className="hover:text-brand-dark ml-1">ブログ</Link> &gt;
         <span className="ml-1 text-gray-800">{post.category}</span>
       </div>
 
@@ -68,7 +120,7 @@ const BlogPost: React.FC = () => {
         )}
 
         {/* Content Body - render saved HTML so画像も本文に出る */}
-        <div className="prose prose-lg max-w-none text-gray-700">
+        <div className="blog-article prose prose-lg max-w-none text-gray-700">
             <div className="bg-gray-50 p-6 rounded-lg border-l-4 border-brand-accent mb-10">
                 <p className="font-medium text-gray-800 m-0">
                     {post.excerpt}
