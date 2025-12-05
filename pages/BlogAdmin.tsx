@@ -449,6 +449,26 @@ const BlogAdmin: React.FC = () => {
             color: #1f2937;
           }
 
+          .blog-preview figure {
+            margin: 1.5rem 0;
+          }
+
+          .blog-preview img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 12px;
+            margin: 0 auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+          }
+
+          .blog-preview figcaption {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #4b5563;
+            margin-top: 0.35rem;
+          }
+
           .blog-preview ul {
             list-style: disc;
             padding-left: 1.5rem;
