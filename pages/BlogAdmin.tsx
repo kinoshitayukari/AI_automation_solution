@@ -4,6 +4,30 @@ import AdminGate from '../components/AdminGate';
 import { useDataContext } from '../components/DataContext';
 import { BlogPost } from '../types';
 
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+type ResearchResult = {
+  source: string;
+  url: string;
+  headings: string[];
+};
+
+type OutlineSection = {
+  title: string;
+  points: string[];
+};
+
+type StepOutput = {
+  research?: ResearchResult[];
+  outline?: OutlineSection[];
+  draft?: {
+    title: string;
+    excerpt: string;
+    markdown: string;
+  };
+  html?: string;
+};
+
 type BlogFormState = {
   title: string;
   category: string;
@@ -29,6 +53,104 @@ const BlogAdmin: React.FC = () => {
   const [form, setForm] = useState<BlogFormState>(defaultFormState);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState<string>(GEMINI_API_KEY || '');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [stepOutput, setStepOutput] = useState<StepOutput>({});
+
+  const extractJson = <T,>(text: string): T => {
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(cleaned) as T;
+  };
+
+  const callGemini = async (model: string, prompt: string) => {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      }
+    );
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || 'Gemini APIの呼び出しに失敗しました。');
+    }
+
+    const data = await response.json();
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined;
+
+    if (!text) {
+      throw new Error('Gemini APIから有効な応答が得られませんでした。');
+    }
+
+    return text;
+  };
+
+  const generateWithGemini = async () => {
+    if (!keywords.trim()) {
+      setError('キーワードを入力してください。');
+      return;
+    }
+
+    if (!geminiApiKey) {
+      setError('Gemini APIキーが設定されていません。画面の入力欄か .env.local の VITE_GEMINI_API_KEY に設定してください。');
+      return;
+    }
+
+    setIsGenerating(true);
+    setError('');
+    setStepOutput({});
+
+    try {
+      const researchPrompt = `あなたはSEOとリサーチに長けた日本語編集者です。入力キーワードをもとに、日本語の関連トピックを扱う10サイトを想定し、各サイトの主要見出しを整理してください。必ずJSONのみを返し、次の形式を厳守してください。\n\nキーワード: ${keywords}\n\n返却形式:\n{\n  "sites": [\n    {"source": "サイト名", "url": "https://example.com", "headings": ["見出し1", "見出し2"]},\n    ...合計10サイト...\n  ]\n}\n\n箇条書きや前置きは不要で、10サイトすべて日本語でユニークにしてください。`;
+
+      const researchText = await callGemini('gemini-2.0-flash', researchPrompt);
+      const researchJson = extractJson<{ sites: ResearchResult[] }>(researchText);
+      setStepOutput((prev) => ({ ...prev, research: researchJson.sites }));
+
+      const outlinePrompt = `以下のリサーチ結果から、すべての見出し要素を含めた包括的なアウトラインを作成してください。最終的に記事化しやすいように章立てを整理し、JSONだけで返してください。\n\nリサーチ結果: ${JSON.stringify(
+        researchJson.sites
+      )}\n\n返却形式:\n{\n  "outline": [\n    {"title": "セクションタイトル", "points": ["含める要素", "詳細ポイント"]}\n  ]\n}\n\nモデルはGemini 2.5 Flashとして応答し、日本語で出力してください。`;
+
+      const outlineText = await callGemini('gemini-2.5-flash', outlinePrompt);
+      const outlineJson = extractJson<{ outline: OutlineSection[] }>(outlineText);
+      setStepOutput((prev) => ({ ...prev, outline: outlineJson.outline }));
+
+      const draftPrompt = `あなたは日本語ブログのプロ編集者です。以下のアウトラインをすべて網羅し、読者が理解しやすい流れで本文をMarkdownで作成してください。タイトルとリード文も含めてJSONのみを返してください。\n\nアウトライン: ${JSON.stringify(
+        outlineJson.outline
+      )}\nキーワード: ${keywords}\n\n返却形式:\n{\n  "title": "キャッチーなタイトル",\n  "excerpt": "120文字程度のリード文",\n  "articleMarkdown": "# 見出し...本文(約1200-1600文字)"\n}\n\n文章はGemini 2.5 Flashとして生成し、日本語で丁寧かつ具体的に書いてください。`;
+
+      const draftText = await callGemini('gemini-2.5-flash', draftPrompt);
+      const draftJson = extractJson<{ title: string; excerpt: string; articleMarkdown: string }>(draftText);
+      setStepOutput((prev) => ({
+        ...prev,
+        draft: { title: draftJson.title, excerpt: draftJson.excerpt, markdown: draftJson.articleMarkdown },
+      }));
+
+      const htmlPrompt = `次のMarkdown本文を、ブログに貼り付けられるクリーンなHTMLに変換してください。見出しはh2/h3を使用し、リストや強調も適切にタグ化してください。JSONのみで返してください。\n\nタイトル: ${draftJson.title}\nリード文: ${draftJson.excerpt}\nMarkdown: ${draftJson.articleMarkdown}\n\n返却形式:\n{\n  "html": "<article>...生成されたHTML...</article>"\n}`;
+
+      const htmlText = await callGemini('gemini-2.5-flash', htmlPrompt);
+      const htmlJson = extractJson<{ html: string }>(htmlText);
+      setStepOutput((prev) => ({ ...prev, html: htmlJson.html }));
+
+      setForm((prev) => ({
+        ...prev,
+        title: draftJson.title || prev.title,
+        excerpt: draftJson.excerpt || prev.excerpt,
+        content: htmlJson.html || draftJson.articleMarkdown || prev.content,
+        tags: prev.tags || '#AI, #自動化',
+        category: prev.category || '基礎知識',
+        readTime: prev.readTime || '7分',
+      }));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '生成中にエラーが発生しました。';
+      setError(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -109,6 +231,134 @@ const BlogAdmin: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:items-center md:gap-4">
+                <div className="md:col-span-2 flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">キーワードからAI下書きを生成</label>
+                    <input
+                      type="text"
+                      value={keywords}
+                      onChange={(e) => setKeywords(e.target.value)}
+                      placeholder="例: AI自動化 ブログ運用 スケーリング"
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={generateWithGemini}
+                    disabled={isGenerating}
+                    className="whitespace-nowrap px-4 py-3 rounded-lg font-bold text-white bg-gradient-to-r from-brand-dark to-brand-accent shadow-sm disabled:opacity-70"
+                  >
+                    {isGenerating ? '生成中...' : 'AIで下書きを作成'}
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gemini APIキー</label>
+                  <input
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value.trim())}
+                    placeholder="入力または .env.local の値を使用"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                キーワードを入力すると Gemini が4ステップでリサーチ・アウトライン・本文・HTMLを順番に生成し、結果が下に表示されます。APIキーはこの画面にのみ保持されます。
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-900">ステップ1: 10サイトのリサーチ (Gemini 2.0 Flash)</h4>
+                  {isGenerating && !stepOutput.research && <span className="text-xs text-brand-dark">実行中...</span>}
+                </div>
+                {stepOutput.research ? (
+                  <div className="space-y-2 max-h-52 overflow-y-auto text-sm text-gray-700">
+                    {stepOutput.research.map((site, index) => (
+                      <div key={`${site.url}-${index}`} className="border border-gray-100 rounded-lg p-2">
+                        <p className="font-semibold text-gray-900">{site.source}</p>
+                        <p className="text-xs text-gray-500 break-all">{site.url}</p>
+                        <ul className="list-disc list-inside text-gray-700 mt-1">
+                          {site.headings.map((heading, idx) => (
+                            <li key={idx}>{heading}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">キーワード入力後に実行すると、10サイト分の見出しが表示されます。</p>
+                )}
+              </div>
+
+              <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-900">ステップ2: 包括アウトライン (Gemini 2.5 Flash)</h4>
+                  {isGenerating && stepOutput.research && !stepOutput.outline && (
+                    <span className="text-xs text-brand-dark">実行中...</span>
+                  )}
+                </div>
+                {stepOutput.outline ? (
+                  <div className="space-y-2 max-h-52 overflow-y-auto text-sm text-gray-700">
+                    {stepOutput.outline.map((section, index) => (
+                      <div key={`${section.title}-${index}`} className="border border-gray-100 rounded-lg p-2">
+                        <p className="font-semibold text-gray-900">{section.title}</p>
+                        <ul className="list-disc list-inside text-gray-700 mt-1">
+                          {section.points.map((point, idx) => (
+                            <li key={idx}>{point}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">ステップ1の見出しをまとめたアウトラインがここに表示されます。</p>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-900">ステップ3: 本文ドラフト (Gemini 2.5 Flash)</h4>
+                  {isGenerating && stepOutput.outline && !stepOutput.draft && (
+                    <span className="text-xs text-brand-dark">実行中...</span>
+                  )}
+                </div>
+                {stepOutput.draft ? (
+                  <div className="space-y-2 max-h-52 overflow-y-auto text-sm text-gray-700">
+                    <p className="font-semibold text-gray-900">{stepOutput.draft.title}</p>
+                    <p className="text-gray-700">{stepOutput.draft.excerpt}</p>
+                    <pre className="bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs whitespace-pre-wrap">
+                      {stepOutput.draft.markdown}
+                    </pre>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">アウトラインを反映したMarkdown本文がここに表示されます。</p>
+                )}
+              </div>
+
+              <div className="bg-white border border-gray-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-900">ステップ4: HTML化 (Gemini 2.5 Flash)</h4>
+                  {isGenerating && stepOutput.draft && !stepOutput.html && (
+                    <span className="text-xs text-brand-dark">実行中...</span>
+                  )}
+                </div>
+                {stepOutput.html ? (
+                  <div className="space-y-2 max-h-52 overflow-y-auto text-sm text-gray-700">
+                    <pre className="bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs whitespace-pre-wrap">
+                      {stepOutput.html}
+                    </pre>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">最終的なHTMLがここに表示され、本文欄にも反映されます。</p>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">タイトル</label>
