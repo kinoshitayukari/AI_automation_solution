@@ -7,6 +7,7 @@ const BlogPost: React.FC = () => {
   const { blogPosts } = useDataContext();
   const { id } = useParams<{ id: string }>();
   const post = blogPosts.find(p => p.id === id);
+  const eyeCatch = post?.eyeCatchUrl || post?.imageUrl;
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -60,9 +61,11 @@ const BlogPost: React.FC = () => {
         </div>
 
         {/* Featured Image */}
-        <div className="mb-12 rounded-2xl overflow-hidden shadow-lg">
-            <img src={post.imageUrl} alt={post.title} className="w-full h-auto object-cover" />
-        </div>
+        {eyeCatch && (
+          <div className="mb-12 rounded-2xl overflow-hidden shadow-lg">
+              <img src={eyeCatch} alt={post.title} className="w-full h-auto object-cover" />
+          </div>
+        )}
 
         {/* Content Body - Simulating rich text with hardcoded styling for the demo */}
         <div className="prose prose-lg max-w-none text-gray-700">
@@ -119,6 +122,20 @@ const BlogPost: React.FC = () => {
             <p className="leading-relaxed">
                 AI自動化は、もはや大企業だけのものではありません。適切な知識とツールがあれば、誰でも業務効率化を実現できます。まずは小さな一歩から始めて、徐々にスキルを磨いていきましょう。
             </p>
+
+            {post.inlineImages && post.inlineImages.length > 0 && (
+              <div className="mt-10 space-y-4">
+                <h3 className="text-xl font-bold text-gray-900">記事内画像プレビュー</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {post.inlineImages.map((url) => (
+                    <div key={url} className="overflow-hidden rounded-xl border border-gray-100 shadow-sm bg-white">
+                      <img src={url} alt={post.title} className="w-full h-auto object-cover" />
+                      <p className="text-xs text-gray-600 px-3 py-2 break-all">{url}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
 
         {/* Tags */}
@@ -156,7 +173,7 @@ const BlogPost: React.FC = () => {
                 {relatedPosts.map(rp => (
                     <Link to={`/blog/${rp.id}`} key={rp.id} className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-all">
                         <div className="h-40 overflow-hidden">
-                             <img src={rp.imageUrl} alt={rp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                             <img src={rp.eyeCatchUrl || rp.imageUrl} alt={rp.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         </div>
                         <div className="p-5">
                             <span className="text-xs text-gray-400 mb-2 block">{rp.date}</span>

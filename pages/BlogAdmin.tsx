@@ -35,6 +35,8 @@ type BlogFormState = {
   content: string;
   tags: string;
   imageUrl: string;
+  eyeCatchUrl: string;
+  inlineImages: string;
   readTime: string;
 };
 
@@ -45,6 +47,8 @@ const defaultFormState: BlogFormState = {
   content: '',
   tags: '',
   imageUrl: 'https://picsum.photos/id/180/800/450',
+  eyeCatchUrl: 'https://picsum.photos/id/180/1200/630',
+  inlineImages: '',
   readTime: '5分',
 };
 
@@ -185,7 +189,12 @@ const BlogAdmin: React.FC = () => {
         ? blogPosts.find((post) => post.id === editingId)?.date || new Date().toISOString().slice(0, 10)
         : new Date().toISOString().slice(0, 10),
       readTime: form.readTime || '5分',
-      imageUrl: form.imageUrl || 'https://picsum.photos/id/180/800/450',
+      imageUrl: form.imageUrl || form.eyeCatchUrl || 'https://picsum.photos/id/180/800/450',
+      eyeCatchUrl: form.eyeCatchUrl || form.imageUrl || 'https://picsum.photos/id/180/1200/630',
+      inlineImages: form.inlineImages
+        .split(/\n|,/)
+        .map((line) => line.trim())
+        .filter(Boolean),
     };
 
     if (editingId) {
@@ -207,6 +216,8 @@ const BlogAdmin: React.FC = () => {
       content: post.content,
       tags: post.tags.join(', '),
       imageUrl: post.imageUrl,
+      eyeCatchUrl: post.eyeCatchUrl || post.imageUrl,
+      inlineImages: (post.inlineImages || []).join('\n'),
       readTime: post.readTime,
     });
     setEditingId(post.id);
@@ -534,14 +545,31 @@ const BlogAdmin: React.FC = () => {
                 HTMLとプレビューは双方向に連動します。プレビュー上で見出しや本文を直接修正すると、HTMLにも即時反映されます。
               </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">メイン画像URL</label>
-              <input
-                type="text"
-                value={form.imageUrl}
-                onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">アイキャッチ画像URL</label>
+                <input
+                  type="text"
+                  value={form.eyeCatchUrl}
+                  onChange={(e) =>
+                    setForm({ ...form, eyeCatchUrl: e.target.value, imageUrl: e.target.value })
+                  }
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  placeholder="1200x630程度を推奨"
+                />
+                <p className="text-xs text-gray-500 mt-1">一覧やSNSシェアで使うアイキャッチ画像を設定します。</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">本文内画像URL (改行またはカンマ区切り)</label>
+                <textarea
+                  value={form.inlineImages}
+                  onChange={(e) => setForm({ ...form, inlineImages: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
+                  rows={3}
+                  placeholder={`https://example.com/image1.jpg\nhttps://example.com/image2.jpg`}
+                />
+                <p className="text-xs text-gray-500 mt-1">本文に挿入したい画像URLを複数入力できます。</p>
+              </div>
             </div>
             {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">{error}</p>}
 

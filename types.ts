@@ -12,6 +12,8 @@ export interface BlogPost {
   date: string;
   readTime: string;
   imageUrl: string;
+  eyeCatchUrl?: string;
+  inlineImages?: string[];
 }
 
 export interface Testimonial {

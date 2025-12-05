@@ -73,9 +73,9 @@ const BlogList: React.FC = () => {
           {filteredPosts.map((post) => (
             <Link to={`/blog/${post.id}`} key={post.id} className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow duration-300">
               <div className="relative h-56 overflow-hidden">
-                <img 
-                  src={post.imageUrl} 
-                  alt={post.title} 
+                <img
+                  src={post.eyeCatchUrl || post.imageUrl}
+                  alt={post.title}
                   className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-4 left-4">
