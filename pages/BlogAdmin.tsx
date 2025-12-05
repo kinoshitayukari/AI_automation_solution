@@ -127,6 +127,14 @@ const BlogAdmin: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (contentView !== 'preview' || !previewRef.current) return;
+    const nextHtml = form.content || '';
+    if (previewRef.current.innerHTML !== nextHtml) {
+      previewRef.current.innerHTML = nextHtml;
+    }
+  }, [contentView, form.content]);
+
+  useEffect(() => {
     if (contentView === 'preview') {
       requestAnimationFrame(() => restorePreviewSelection());
     }
@@ -491,6 +499,12 @@ const BlogAdmin: React.FC = () => {
             background: rgba(92, 203, 186, 0.08);
             border-radius: 0.75rem;
           }
+
+          .blog-preview:empty:before {
+            content: attr(data-placeholder);
+            color: #9ca3af;
+            font-weight: 600;
+          }
         `}
       </style>
       <div className="space-y-6">
@@ -828,11 +842,7 @@ const BlogAdmin: React.FC = () => {
                   onMouseUp={savePreviewSelection}
                   onKeyUp={savePreviewSelection}
                   className="blog-preview border border-brand-dark/10 bg-gradient-to-br from-gray-50 to-white rounded-xl p-4 focus:outline-none focus:ring-2 focus:ring-brand-accent shadow-inner min-h-[240px]"
-                  dangerouslySetInnerHTML={{
-                    __html:
-                      form.content ||
-                      '<h2>大見出しの例</h2><p>ここに本文が入ります。プレビュー上でもテキストを直接編集できます。</p><h3>小見出しの例</h3><p>箇条書きや強調なども編集可能です。</p>',
-                  }}
+                  data-placeholder="ここに本文を入力するか、HTMLタブに切り替えてペーストしてください。"
                 />
               )}
               <p className="text-xs text-gray-600 flex items-center gap-2">
