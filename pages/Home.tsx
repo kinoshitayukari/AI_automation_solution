@@ -299,6 +299,13 @@ const Home: React.FC = () => {
               <img src="https://picsum.photos/id/4/1200/600" alt="Platform Dashboard" className="w-full h-auto opacity-90" />
               <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
           </div>
+
+          <div className="mt-12 bg-gray-50 border border-gray-200 rounded-2xl p-8 text-left text-gray-800 shadow-sm">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">AI自動化システムの制作もお任せください</h3>
+            <p className="text-lg leading-relaxed">
+              現場の課題に合わせたAI自動化システムの企画・開発も承っています。既存ツールの連携からオーダーメイドのワークフロー構築まで、運用まで含めてサポートいたします。
+            </p>
+          </div>
         </div>
       </section>
     </div>
