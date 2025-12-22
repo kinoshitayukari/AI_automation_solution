@@ -5,47 +5,47 @@ const BlogList: React.FC = () => {
   const htmlPostFiles = [
     {
       file: "upload_contents_App_Google_AI_Studio_Build.html",
-      title: "Google AI Studio Buildでできるアプリ - 生成記事",
+      title: "Google AI Studioの「Build」機能でアプリ作成！初心者でもノーコードで開発・公開する方法を徹底解説",
       image: "images/sec000_report_001.jpg",
     },
     {
       file: "upload_contents_Defference_GPT1.5Image_NanoBanana.html",
-      title: "GPT1.5ImageとNanoBananaの違い - 生成記事",
+      title: "GPT-Image-1.5 vs Nano Banana 徹底比較！画像生成AIの選び方と使い分けガイド",
       image: "images/sec000_report_001.jpg",
     },
     {
       file: "upload_contents_Defference_GoogleAIStudio_GeminiOpal.html",
-      title: "Google AI StudioとGemini Opalの違い - 生成記事",
+      title: "Google AI StudioとGemini Opalの違いを徹底比較！初心者に最適なツールの選び方",
       image: "images/sec000_photo_3.png",
     },
     {
       file: "upload_contents_Elon_Macrohard.html",
-      title: "イーロンマスク　Macrohard",
+      title: "イーロン・マスクが仕掛ける「Macrohard（マクロハード）」とは？マイクロソフトへの挑戦とAI革命の全貌",
       image: "images/sec000_realistic_photo_5.png",
     },
     {
       file: "upload_contents_Elon_space_newest.html",
-      title: "イーロンマスク　宇宙事業　最新",
+      title: "イーロン・マスクの宇宙事業最前線：SpaceXの最新動向と2026年IPOへの展望",
       image: "images/upload_contents_Elon_space_newest_realistic_photo_1.png",
     },
     {
       file: "upload_contents_Elon_sunpower_newest.html",
-      title: "イーロンマスク　核融合について　発言",
+      title: "イーロン・マスクが「核融合は不要」と主張する真意とは？太陽光発電が最適解とされる理由を徹底解説",
       image: "images/upload_contents_Elon_sunpower_newest_sec001_realistic_photo_2.png",
     },
     {
       file: "upload_contents_defference_gemini3_chatgpt5.html",
-      title: "Gemini 3.0 ProとchatGPT５．２の違い - 生成記事",
+      title: "Gemini 3.0 Pro vs ChatGPT 5.2 徹底比較！2025年最強AIはどっち？仕事で役立つ選び方を解説",
       image: "images/sec000_photo_2.png",
     },
     {
       file: "upload_contents_miniapp_function_on_gems.html",
-      title: "Gems機能に新しくミニアプリが作れる機能が追加 - 生成記事",
+      title: "GeminiのGemsで「ミニアプリ」が作成可能に！新機能Opalの使い方と活用術を徹底解説",
       image: "images/sec000_photo_3.png",
     },
     {
       file: "upload_contents_what_gemini_3_flash.html",
-      title: "Gemini 3.0 flashで何ができる？ - 生成記事",
+      title: "「Gemini 3.0 Flashで何ができる？」徹底解説！進化点・使い方・活用事例まとめ",
       image: "images/sec000_report_003.jpg",
     },
   ];
