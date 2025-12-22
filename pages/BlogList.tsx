@@ -8,6 +8,44 @@ const BlogList: React.FC = () => {
   const { blogPosts } = useDataContext();
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [searchQuery, setSearchQuery] = useState("");
+  const htmlPosts = [
+    {
+      title: "App Google AI Studio Build",
+      file: "App_Google_AI_Studio_Build.html",
+    },
+    {
+      title: "Difference GPT1.5 Image Nano Banana",
+      file: "Defference_GPT1.5Image_NanoBanana.html",
+    },
+    {
+      title: "Difference Google AI Studio Gemini Opal",
+      file: "Defference_GoogleAIStudio_GeminiOpal.html",
+    },
+    {
+      title: "Elon Macrohard",
+      file: "Elon_Macrohard.html",
+    },
+    {
+      title: "Elon Space Newest",
+      file: "Elon_space_newest.html",
+    },
+    {
+      title: "Elon Sunpower Newest",
+      file: "Elon_sunpower_newest.html",
+    },
+    {
+      title: "Difference Gemini 3 vs ChatGPT 5",
+      file: "defference_gemini3_chatgpt5.html",
+    },
+    {
+      title: "Mini App Function on Gems",
+      file: "miniapp_function_on_gems.html",
+    },
+    {
+      title: "What Gemini 3 Flash",
+      file: "what_gemini_3_flash.html",
+    },
+  ];
 
   const filteredPosts = blogPosts.filter(post => {
     const matchesCategory = activeCategory === "すべて" || post.category === activeCategory;
@@ -126,6 +164,39 @@ const BlogList: React.FC = () => {
             </button>
           </div>
         )}
+      </div>
+
+      {/* HTML Blog Links */}
+      <div className="bg-white border-t border-gray-100 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">HTMLブログ記事</h2>
+              <p className="text-gray-500 mt-2">
+                公開済みのHTML記事はこちらからご覧いただけます。
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {htmlPosts.map((post) => (
+              <a
+                key={post.file}
+                href={`${import.meta.env.BASE_URL}blog/posts/${post.file}`}
+                className="group border border-gray-200 rounded-2xl p-6 bg-gray-50 hover:bg-white hover:shadow-md transition-all"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <div className="text-sm text-gray-400 mb-2">HTML</div>
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-brand-light transition-colors">
+                  {post.title}
+                </h3>
+                <div className="mt-4 inline-flex items-center text-sm text-brand-dark font-semibold">
+                  記事を開く <ArrowRight className="ml-2" size={14} />
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
       
       {/* Bottom CTA */}

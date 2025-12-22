@@ -13,7 +13,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navLinks: { name: string; path: string; external?: boolean }[] = [
     { name: 'サービス概要', path: '/' },
     { name: '学習コース', path: '/' },
-    { name: 'ブログ', path: 'https://note.com/joyful_bobcat685', external: true },
+    { name: 'ブログ', path: `${import.meta.env.BASE_URL}blog/posts/`, external: true },
     { name: '導入事例', path: '/' },
     { name: '管理画面', path: '/admin/blog' },
   ];
