@@ -19,23 +19,40 @@ const BlogList: React.FC = () => {
     { file: "upload_contents_miniapp_function_on_gems.html" },
     { file: "upload_contents_what_gemini_3_flash.html" },
   ];
-  const [htmlPosts, setHtmlPosts] = useState<{ file: string; title: string }[]>([]);
+  const [htmlPosts, setHtmlPosts] = useState<{ file: string; title: string }[]>(
+    htmlPostFiles.map(({ file }) => ({ file, title: file }))
+  );
 
   useEffect(() => {
     let isMounted = true;
+
+    const extractTitle = (html: string, fallback: string) => {
+      if (typeof DOMParser !== 'undefined') {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const parsedTitle = doc.querySelector('title')?.textContent?.trim();
+        if (parsedTitle) {
+          return parsedTitle;
+        }
+      }
+      const match = html.match(/<title>([^<]*)<\/title>/i);
+      return match?.[1]?.trim() || fallback;
+    };
 
     const loadHtmlTitles = async () => {
       const results = await Promise.all(
         htmlPostFiles.map(async ({ file }) => {
           const url = `${import.meta.env.BASE_URL}blog/posts/${file}`;
-          const response = await fetch(url);
-          if (!response.ok) {
+          try {
+            const response = await fetch(url);
+            if (!response.ok) {
+              return { file, title: file };
+            }
+            const html = await response.text();
+            const title = extractTitle(html, file);
+            return { file, title };
+          } catch (error) {
             return { file, title: file };
           }
-          const html = await response.text();
-          const match = html.match(/<title>([^<]*)<\/title>/i);
-          const title = match?.[1]?.trim() || file;
-          return { file, title };
         })
       );
 
@@ -49,7 +66,7 @@ const BlogList: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [htmlPostFiles]);
 
   const filteredPosts = blogPosts.filter(post => {
     const matchesCategory = activeCategory === "すべて" || post.category === activeCategory;
