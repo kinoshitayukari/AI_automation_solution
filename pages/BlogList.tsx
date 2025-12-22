@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Clock, ArrowRight } from 'lucide-react';
 import { CATEGORIES } from '../constants';
@@ -8,44 +8,48 @@ const BlogList: React.FC = () => {
   const { blogPosts } = useDataContext();
   const [activeCategory, setActiveCategory] = useState("すべて");
   const [searchQuery, setSearchQuery] = useState("");
-  const htmlPosts = [
-    {
-      title: "App Google AI Studio Build",
-      file: "App_Google_AI_Studio_Build.html",
-    },
-    {
-      title: "Difference GPT1.5 Image Nano Banana",
-      file: "Defference_GPT1.5Image_NanoBanana.html",
-    },
-    {
-      title: "Difference Google AI Studio Gemini Opal",
-      file: "Defference_GoogleAIStudio_GeminiOpal.html",
-    },
-    {
-      title: "Elon Macrohard",
-      file: "Elon_Macrohard.html",
-    },
-    {
-      title: "Elon Space Newest",
-      file: "Elon_space_newest.html",
-    },
-    {
-      title: "Elon Sunpower Newest",
-      file: "Elon_sunpower_newest.html",
-    },
-    {
-      title: "Difference Gemini 3 vs ChatGPT 5",
-      file: "defference_gemini3_chatgpt5.html",
-    },
-    {
-      title: "Mini App Function on Gems",
-      file: "miniapp_function_on_gems.html",
-    },
-    {
-      title: "What Gemini 3 Flash",
-      file: "what_gemini_3_flash.html",
-    },
+  const htmlPostFiles = [
+    { file: "upload_contents_App_Google_AI_Studio_Build.html" },
+    { file: "upload_contents_Defference_GPT1.5Image_NanoBanana.html" },
+    { file: "upload_contents_Defference_GoogleAIStudio_GeminiOpal.html" },
+    { file: "upload_contents_Elon_Macrohard.html" },
+    { file: "upload_contents_Elon_space_newest.html" },
+    { file: "upload_contents_Elon_sunpower_newest.html" },
+    { file: "upload_contents_defference_gemini3_chatgpt5.html" },
+    { file: "upload_contents_miniapp_function_on_gems.html" },
+    { file: "upload_contents_what_gemini_3_flash.html" },
   ];
+  const [htmlPosts, setHtmlPosts] = useState<{ file: string; title: string }[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadHtmlTitles = async () => {
+      const results = await Promise.all(
+        htmlPostFiles.map(async ({ file }) => {
+          const url = `${import.meta.env.BASE_URL}blog/posts/${file}`;
+          const response = await fetch(url);
+          if (!response.ok) {
+            return { file, title: file };
+          }
+          const html = await response.text();
+          const match = html.match(/<title>([^<]*)<\/title>/i);
+          const title = match?.[1]?.trim() || file;
+          return { file, title };
+        })
+      );
+
+      if (isMounted) {
+        setHtmlPosts(results);
+      }
+    };
+
+    loadHtmlTitles();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredPosts = blogPosts.filter(post => {
     const matchesCategory = activeCategory === "すべて" || post.category === activeCategory;
