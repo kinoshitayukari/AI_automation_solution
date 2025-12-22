@@ -2,12 +2,12 @@ import React from 'react';
 import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import BlogList from './pages/BlogList';
 import BlogPost from './pages/BlogPost';
 import BlogAdmin from './pages/BlogAdmin';
 import InquiryAdmin from './pages/InquiryAdmin';
 import { DataProvider } from './components/DataContext';
 import { Navigate } from 'react-router-dom';
+import BlogRedirect from './pages/BlogRedirect';
 
 // ScrollToTop component to handle scroll position on route change
 const ScrollToTop = () => {
@@ -28,7 +28,7 @@ const App: React.FC = () => {
         <Layout>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/blog" element={<BlogList />} />
+            <Route path="/blog" element={<BlogRedirect />} />
             <Route path="/blog/:id" element={<BlogPost />} />
             <Route path="/admin" element={<Navigate to="/admin/blog" replace />} />
             <Route path="/admin/blog" element={<BlogAdmin />} />
