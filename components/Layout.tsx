@@ -10,10 +10,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
 
-  const navLinks = [
+  const navLinks: { name: string; path: string; external?: boolean }[] = [
     { name: 'サービス概要', path: '/' },
     { name: '学習コース', path: '/' },
-    { name: 'ブログ', path: '/blog' },
+    { name: 'ブログ', path: 'https://note.com/joyful_bobcat685', external: true },
     { name: '導入事例', path: '/' },
     { name: '管理画面', path: '/admin/blog' },
   ];
@@ -37,15 +37,29 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className={`text-sm font-medium hover:opacity-75 transition-colors ${
-                    isHome ? 'text-white' : 'text-gray-700 hover:text-brand'
-                  }`}
-                >
-                  {link.name}
-                </Link>
+                link.external ? (
+                  <a
+                    key={link.name}
+                    href={link.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`text-sm font-medium hover:opacity-75 transition-colors ${
+                      isHome ? 'text-white' : 'text-gray-700 hover:text-brand'
+                    }`}
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className={`text-sm font-medium hover:opacity-75 transition-colors ${
+                      isHome ? 'text-white' : 'text-gray-700 hover:text-brand'
+                    }`}
+                  >
+                    {link.name}
+                  </Link>
+                )
               ))}
               <Link
                 to="/admin/blog"
@@ -79,14 +93,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="md:hidden bg-brand-dark absolute w-full left-0 top-20 shadow-xl border-t border-gray-700">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.name}
-                </Link>
+                link.external ? (
+                  <a
+                    key={link.name}
+                    href={link.path}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                )
               ))}
               <div className="mt-4 flex flex-col space-y-3 px-3">
                 <Link
