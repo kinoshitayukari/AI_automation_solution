@@ -1,66 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ArrowRight } from 'lucide-react';
 
 const BlogList: React.FC = () => {
   const htmlPostFiles = [
-    { file: "upload_contents_App_Google_AI_Studio_Build.html" },
-    { file: "upload_contents_Defference_GPT1.5Image_NanoBanana.html" },
-    { file: "upload_contents_Defference_GoogleAIStudio_GeminiOpal.html" },
-    { file: "upload_contents_Elon_Macrohard.html" },
-    { file: "upload_contents_Elon_space_newest.html" },
-    { file: "upload_contents_Elon_sunpower_newest.html" },
-    { file: "upload_contents_defference_gemini3_chatgpt5.html" },
-    { file: "upload_contents_miniapp_function_on_gems.html" },
-    { file: "upload_contents_what_gemini_3_flash.html" },
+    {
+      file: "upload_contents_App_Google_AI_Studio_Build.html",
+      title: "Google AI Studio Buildでできるアプリ - 生成記事",
+    },
+    {
+      file: "upload_contents_Defference_GPT1.5Image_NanoBanana.html",
+      title: "GPT1.5ImageとNanoBananaの違い - 生成記事",
+    },
+    {
+      file: "upload_contents_Defference_GoogleAIStudio_GeminiOpal.html",
+      title: "Google AI StudioとGemini Opalの違い - 生成記事",
+    },
+    {
+      file: "upload_contents_Elon_Macrohard.html",
+      title: "イーロンマスク　Macrohard",
+    },
+    {
+      file: "upload_contents_Elon_space_newest.html",
+      title: "イーロンマスク　宇宙事業　最新",
+    },
+    {
+      file: "upload_contents_Elon_sunpower_newest.html",
+      title: "イーロンマスク　核融合について　発言",
+    },
+    {
+      file: "upload_contents_defference_gemini3_chatgpt5.html",
+      title: "Gemini 3.0 ProとchatGPT５．２の違い - 生成記事",
+    },
+    {
+      file: "upload_contents_miniapp_function_on_gems.html",
+      title: "Gems機能に新しくミニアプリが作れる機能が追加 - 生成記事",
+    },
+    {
+      file: "upload_contents_what_gemini_3_flash.html",
+      title: "Gemini 3.0 flashで何ができる？ - 生成記事",
+    },
   ];
-  const [htmlPosts, setHtmlPosts] = useState<{ file: string; title: string }[]>(
-    htmlPostFiles.map(({ file }) => ({ file, title: file }))
-  );
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const extractTitle = (html: string, fallback: string) => {
-      if (typeof DOMParser !== 'undefined') {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        const parsedTitle = doc.querySelector('title')?.textContent?.trim();
-        if (parsedTitle) {
-          return parsedTitle;
-        }
-      }
-      const match = html.match(/<title>([^<]*)<\/title>/i);
-      return match?.[1]?.trim() || fallback;
-    };
-
-    const loadHtmlTitles = async () => {
-      const results = await Promise.all(
-        htmlPostFiles.map(async ({ file }) => {
-          const url = `${import.meta.env.BASE_URL}blog/posts/${file}`;
-          try {
-            const response = await fetch(url);
-            if (!response.ok) {
-              return { file, title: file };
-            }
-            const html = await response.text();
-            const title = extractTitle(html, file);
-            return { file, title };
-          } catch (error) {
-            return { file, title: file };
-          }
-        })
-      );
-
-      if (isMounted) {
-        setHtmlPosts(results);
-      }
-    };
-
-    loadHtmlTitles();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [htmlPostFiles]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -76,7 +55,7 @@ const BlogList: React.FC = () => {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {htmlPosts.map((post) => (
+            {htmlPostFiles.map((post) => (
               <a
                 key={post.file}
                 href={`${import.meta.env.BASE_URL}blog/posts/${post.file}`}
