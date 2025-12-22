@@ -6,38 +6,47 @@ const BlogList: React.FC = () => {
     {
       file: "upload_contents_App_Google_AI_Studio_Build.html",
       title: "Google AI Studio Buildでできるアプリ - 生成記事",
+      image: "images/sec000_report_001.jpg",
     },
     {
       file: "upload_contents_Defference_GPT1.5Image_NanoBanana.html",
       title: "GPT1.5ImageとNanoBananaの違い - 生成記事",
+      image: "images/sec000_report_001.jpg",
     },
     {
       file: "upload_contents_Defference_GoogleAIStudio_GeminiOpal.html",
       title: "Google AI StudioとGemini Opalの違い - 生成記事",
+      image: "images/sec000_photo_3.png",
     },
     {
       file: "upload_contents_Elon_Macrohard.html",
       title: "イーロンマスク　Macrohard",
+      image: "images/sec000_realistic_photo_5.png",
     },
     {
       file: "upload_contents_Elon_space_newest.html",
       title: "イーロンマスク　宇宙事業　最新",
+      image: "images/upload_contents_Elon_space_newest_realistic_photo_1.png",
     },
     {
       file: "upload_contents_Elon_sunpower_newest.html",
       title: "イーロンマスク　核融合について　発言",
+      image: "images/upload_contents_Elon_sunpower_newest_sec001_realistic_photo_2.png",
     },
     {
       file: "upload_contents_defference_gemini3_chatgpt5.html",
       title: "Gemini 3.0 ProとchatGPT５．２の違い - 生成記事",
+      image: "images/sec000_photo_2.png",
     },
     {
       file: "upload_contents_miniapp_function_on_gems.html",
       title: "Gems機能に新しくミニアプリが作れる機能が追加 - 生成記事",
+      image: "images/sec000_photo_3.png",
     },
     {
       file: "upload_contents_what_gemini_3_flash.html",
       title: "Gemini 3.0 flashで何ができる？ - 生成記事",
+      image: "images/sec000_report_003.jpg",
     },
   ];
 
@@ -59,16 +68,26 @@ const BlogList: React.FC = () => {
               <a
                 key={post.file}
                 href={`${import.meta.env.BASE_URL}blog/posts/${post.file}`}
-                className="group border border-gray-200 rounded-2xl p-6 bg-gray-50 hover:bg-white hover:shadow-md transition-all"
+                className="group border border-gray-200 rounded-2xl bg-gray-50 hover:bg-white hover:shadow-md transition-all overflow-hidden"
                 target="_blank"
                 rel="noreferrer"
               >
-                <div className="text-sm text-gray-400 mb-2">HTML</div>
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-brand-light transition-colors">
-                  {post.title}
-                </h3>
-                <div className="mt-4 inline-flex items-center text-sm text-brand-dark font-semibold">
-                  記事を開く <ArrowRight className="ml-2" size={14} />
+                <div className="h-44 bg-gray-100 overflow-hidden">
+                  <img
+                    src={`${import.meta.env.BASE_URL}blog/posts/${post.image}`}
+                    alt={post.title}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-6">
+                  <div className="text-sm text-gray-400 mb-2">HTML</div>
+                  <h3 className="text-lg font-bold text-gray-900 group-hover:text-brand-light transition-colors">
+                    {post.title}
+                  </h3>
+                  <div className="mt-4 inline-flex items-center text-sm text-brand-dark font-semibold">
+                    記事を開く <ArrowRight className="ml-2" size={14} />
+                  </div>
                 </div>
               </a>
             ))}
