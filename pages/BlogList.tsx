@@ -10,39 +10,39 @@ const BlogList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const htmlPosts = [
     {
-      title: "App Google AI Studio Build",
+      title: "Google AI Studio Buildでできるアプリ - 生成記事",
       file: "App_Google_AI_Studio_Build.html",
     },
     {
-      title: "Difference GPT1.5 Image Nano Banana",
+      title: "GPT1.5ImageとNanoBananaの違い - 生成記事",
       file: "Defference_GPT1.5Image_NanoBanana.html",
     },
     {
-      title: "Difference Google AI Studio Gemini Opal",
+      title: "Google AI StudioとGemini Opalの違い - 生成記事",
       file: "Defference_GoogleAIStudio_GeminiOpal.html",
     },
     {
-      title: "Elon Macrohard",
+      title: "イーロンマスク　Macrohard",
       file: "Elon_Macrohard.html",
     },
     {
-      title: "Elon Space Newest",
+      title: "イーロンマスク　宇宙事業　最新",
       file: "Elon_space_newest.html",
     },
     {
-      title: "Elon Sunpower Newest",
+      title: "イーロンマスク　核融合について　発言",
       file: "Elon_sunpower_newest.html",
     },
     {
-      title: "Difference Gemini 3 vs ChatGPT 5",
+      title: "Gemini 3.0 ProとchatGPT５．２の違い - 生成記事",
       file: "defference_gemini3_chatgpt5.html",
     },
     {
-      title: "Mini App Function on Gems",
+      title: "Gems機能に新しくミニアプリが作れる機能が追加 - 生成記事",
       file: "miniapp_function_on_gems.html",
     },
     {
-      title: "What Gemini 3 Flash",
+      title: "Gemini 3.0 flashで何ができる？ - 生成記事",
       file: "what_gemini_3_flash.html",
     },
   ];
