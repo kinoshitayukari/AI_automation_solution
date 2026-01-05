@@ -3,10 +3,7 @@ import { HashRouter as Router, Routes, Route, useLocation } from 'react-router-d
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import BlogPost from './pages/BlogPost';
-import BlogAdmin from './pages/BlogAdmin';
-import InquiryAdmin from './pages/InquiryAdmin';
 import { DataProvider } from './components/DataContext';
-import { Navigate } from 'react-router-dom';
 import BlogList from './pages/BlogList';
 
 // ScrollToTop component to handle scroll position on route change
@@ -30,9 +27,6 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/blog" element={<BlogList />} />
             <Route path="/blog/:id" element={<BlogPost />} />
-            <Route path="/admin" element={<Navigate to="/admin/blog" replace />} />
-            <Route path="/admin/blog" element={<BlogAdmin />} />
-            <Route path="/admin/inquiries" element={<InquiryAdmin />} />
           </Routes>
         </Layout>
       </DataProvider>

@@ -94,19 +94,22 @@ export const CHALLENGES: Challenge[] = [
     id: "c1",
     number: "01",
     title: "毎日の定型業務に時間を取られる",
-    description: "データ入力、レポート作成、メール対応など、繰り返しの作業に多くの時間を費やしていませんか？本来の創造的な業務に集中できない状況が続いています。"
+    description: "データ入力、レポート作成、メール対応など、繰り返しの作業に多くの時間を費やしていませんか？本来の創造的な業務に集中できない状況が続いています。",
+    imageUrl: "images/challenge-routine.png",
   },
   {
     id: "c2",
     number: "02",
     title: "AI活用したいが何から始めればいいか分からない",
-    description: "ChatGPTなどのAIツールは知っているけれど、実際の業務にどう活用すればいいのか分からない。プログラミングの知識がないため、導入のハードルが高いと感じています。"
+    description: "ChatGPTなどのAIツールは知っているけれど、実際の業務にどう活用すればいいのか分からない。プログラミングの知識がないため、導入のハードルが高いと感じています。",
+    imageUrl: "images/challenge-confusion.png",
   },
   {
     id: "c3",
     number: "03",
     title: "業務効率化のノウハウが社内に蓄積されない",
-    description: "個人レベルでの工夫はあっても、組織全体で業務効率化のノウハウが共有されず、同じような非効率な作業が繰り返されています。"
+    description: "個人レベルでの工夫はあっても、組織全体で業務効率化のノウハウが共有されず、同じような非効率な作業が繰り返されています。",
+    imageUrl: "images/challenge-silo.png",
   }
 ];
 
@@ -121,13 +124,13 @@ export const SOLUTIONS: SolutionStep[] = [
     step: "02",
     title: "実務シミュレーション",
     description: "実際の業務シーンを想定した演習問題に取り組みます。メール自動生成やデータ分析など、即戦力となるスキルを養います。",
-    imageUrl: "https://picsum.photos/id/6/400/300"
+    imageUrl: "images/solution-simulation.png"
   },
   {
     step: "03",
     title: "自動化実装",
     description: "学んだスキルを実際の業務に適用。専門家のサポートを受けながら、あなたの業務を自動化します。",
-    imageUrl: "https://picsum.photos/id/42/400/300"
+    imageUrl: "images/solution-implementation.png"
   }
 ];
 
@@ -137,41 +140,47 @@ export const TESTIMONIALS: Testimonial[] = [
     name: "田中 健太",
     role: "営業マネージャー",
     content: "「毎日2時間かかっていた営業レポート作成が、AIで15分に短縮されました。空いた時間で顧客対応に集中できるようになり、売上も20%向上しました。」",
-    avatarInitials: "田"
+    avatarInitials: "田",
+    avatarUrl: "images/testimonials/tanaka.png"
   },
   {
     id: "t2",
     name: "佐藤 美咲",
     role: "人事担当",
     content: "「プログラミング経験ゼロでしたが、3ヶ月で採用業務の大部分を自動化できました。応募者データの整理や面接日程調整が自動化され、戦略的な採用活動に時間を使えるようになりました。」",
-    avatarInitials: "佐"
+    avatarInitials: "佐",
+    avatarUrl: "images/testimonials/sato.png"
   },
   {
     id: "t3",
     name: "鈴木 大輔",
     role: "マーケティング",
     content: "「SNS投稿の作成、データ分析、レポート作成をAIで自動化。週に10時間以上の時間を創出でき、新しい施策の企画に集中できています。」",
-    avatarInitials: "鈴"
+    avatarInitials: "鈴",
+    avatarUrl: "images/testimonials/suzuki.png"
   },
   {
     id: "t4",
     name: "山田 愛子",
     role: "経理担当",
     content: "「請求書処理や経費精算の自動化により、月末の残業がほぼゼロになりました。ミスも減り、業務の質も向上しています。」",
-    avatarInitials: "山"
+    avatarInitials: "山",
+    avatarUrl: "images/testimonials/yamada.png"
   },
   {
     id: "t5",
     name: "高橋 誠",
     role: "カスタマーサポート",
     content: "「よくある質問への回答をAIで自動化したことで、より複雑な問い合わせに時間を割けるようになりました。顧客満足度も15%向上しました。」",
-    avatarInitials: "高"
+    avatarInitials: "高",
+    avatarUrl: "images/testimonials/takahashi.png"
   },
   {
     id: "t6",
     name: "伊藤 麻衣",
     role: "プロジェクトマネージャー",
     content: "「会議の議事録作成、タスク管理、進捗レポートの作成を自動化。チームの生産性が大幅に向上し、プロジェクトの成功率も上がりました。」",
-    avatarInitials: "伊"
+    avatarInitials: "伊",
+    avatarUrl: "images/testimonials/ito.png"
   }
 ];

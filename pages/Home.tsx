@@ -2,28 +2,8 @@ import React from 'react';
 import { ArrowRight, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CHALLENGES, SOLUTIONS, TESTIMONIALS } from '../constants';
-import { useDataContext } from '../components/DataContext';
 
 const Home: React.FC = () => {
-  const { addContactSubmission } = useDataContext();
-  const [contactForm, setContactForm] = React.useState({
-    name: '',
-    email: '',
-    topic: '',
-    message: '',
-  });
-  const [contactFeedback, setContactFeedback] = React.useState('');
-
-  const handleContactSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!contactForm.name || !contactForm.email || !contactForm.message) {
-      setContactFeedback('必須項目を入力してください。');
-      return;
-    }
-    await addContactSubmission(contactForm);
-    setContactForm({ name: '', email: '', topic: '', message: '' });
-    setContactFeedback('送信が完了しました。24時間以内にご連絡いたします。');
-  };
 
   return (
     <div className="bg-white">
@@ -53,7 +33,10 @@ const Home: React.FC = () => {
               プログラミング不要。実務で使えるAI自動化を3ヶ月でマスター
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-brand-accent hover:bg-teal-400 text-brand-dark font-bold py-4 px-8 rounded-full text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105">
+              <button 
+                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-brand-accent hover:bg-teal-400 text-brand-dark font-bold py-4 px-8 rounded-full text-lg shadow-lg flex items-center justify-center gap-2 transition-all transform hover:scale-105"
+              >
                 無料体験を始める <ArrowRight size={20} />
               </button>
               <button className="bg-transparent border-2 border-white hover:bg-white hover:text-brand-dark text-white font-bold py-4 px-8 rounded-full text-lg transition-all">
@@ -65,7 +48,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Challenges Section */}
-      <section className="py-24 bg-gray-50">
+      <section className="py-24 bg-gray-50" id="courses">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-16">
             <span className="inline-block border border-gray-400 rounded-full px-4 py-1 text-xs font-semibold tracking-wider text-gray-600 uppercase mb-4">
@@ -76,13 +59,22 @@ const Home: React.FC = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {CHALLENGES.map((challenge) => (
-              <div key={challenge.id} className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border-l-4 border-red-400 relative overflow-hidden group hover:shadow-md transition-shadow">
-                <div className="relative z-10">
-                    <div className="text-sm font-bold text-gray-400 mb-2">{challenge.number}</div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-4">{challenge.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{challenge.description}</p>
+              <div key={challenge.id} className="bg-white rounded-2xl shadow-sm relative overflow-hidden group hover:shadow-lg transition-all h-full flex flex-col">
+                <div className="h-48 overflow-hidden bg-gray-100">
+                    <img 
+                      src={challenge.imageUrl} 
+                      alt={challenge.title} 
+                      className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" 
+                    />
+                </div>
+                <div className="p-8 flex-1 flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="text-4xl font-bold text-gray-200">{challenge.number}</div>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">{challenge.title}</h3>
+                    <p className="text-gray-600 leading-relaxed text-sm flex-grow">{challenge.description}</p>
                 </div>
               </div>
             ))}
@@ -91,7 +83,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Solutions Section */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-white" id="service">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <span className="text-gray-500 font-semibold tracking-widest text-sm uppercase">Our Solution</span>
@@ -150,7 +142,7 @@ const Home: React.FC = () => {
       </section>
 
       {/* Reviews Section */}
-      <section className="py-24 bg-gray-50">
+      <section className="py-24 bg-gray-50" id="cases">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-16">
             <span className="inline-block border border-gray-300 rounded-full px-4 py-1 text-xs font-semibold tracking-wider text-gray-500 uppercase mb-4">
@@ -165,15 +157,7 @@ const Home: React.FC = () => {
             {TESTIMONIALS.map((t) => (
               <div key={t.id} className="bg-white p-8 rounded-2xl shadow-sm hover:shadow-md transition-shadow h-full flex flex-col">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg ${
-                      t.id === 't1' ? 'bg-teal-600' : 
-                      t.id === 't2' ? 'bg-emerald-600' :
-                      t.id === 't3' ? 'bg-cyan-600' :
-                      t.id === 't4' ? 'bg-teal-500' :
-                      t.id === 't5' ? 'bg-emerald-500' : 'bg-cyan-500'
-                  }`}>
-                    {t.avatarInitials}
-                  </div>
+                  <img src={t.avatarUrl} alt={t.name} className="w-14 h-14 rounded-full object-cover shadow-sm border border-gray-100" />
                   <div>
                     <div className="font-bold text-gray-900">{t.name}</div>
                     <div className="text-sm text-gray-500">{t.role}</div>
@@ -195,7 +179,7 @@ const Home: React.FC = () => {
             <span className="text-sm font-bold text-brand-dark uppercase tracking-widest">Contact</span>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mt-2 mb-4">お問い合わせ</h2>
             <p className="text-gray-600 leading-relaxed mb-4">
-              学習コースや法人導入についてのご相談など、お気軽にご連絡ください。フォームから送信された内容は管理画面で確認できます。
+              学習コースや法人導入についてのご相談など、お気軽にご連絡ください。以下のフォームより受け付けております。
             </p>
             <ul className="space-y-3 text-gray-700">
               <li className="flex items-center gap-2"><CheckCircle2 className="text-brand-light" size={18} /> 24時間以内に担当者よりご連絡します。</li>
@@ -203,58 +187,19 @@ const Home: React.FC = () => {
               <li className="flex items-center gap-2"><CheckCircle2 className="text-brand-light" size={18} /> オンラインで完結、最短3分で送信。</li>
             </ul>
           </div>
-          <div className="lg:col-span-3 bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
-            <form className="space-y-4" onSubmit={handleContactSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">お名前 *</label>
-                  <input
-                    type="text"
-                    value={contactForm.name}
-                    onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">メールアドレス *</label>
-                  <input
-                    type="email"
-                    value={contactForm.email}
-                    onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ご相談内容</label>
-                <input
-                  type="text"
-                  value={contactForm.topic}
-                  onChange={(e) => setContactForm({ ...contactForm, topic: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                  placeholder="例：法人研修について"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">詳細 *</label>
-                <textarea
-                  value={contactForm.message}
-                  onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-accent"
-                  rows={4}
-                  placeholder="お問い合わせ内容を具体的にご記入ください。"
-                />
-              </div>
-              {contactFeedback && (
-                <p className="text-sm text-brand-dark bg-teal-50 border border-brand-light rounded-lg px-3 py-2">{contactFeedback}</p>
-              )}
-              <button
-                type="submit"
-                className="w-full bg-brand-dark text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-900 transition-colors"
-              >
-                送信する
-              </button>
-            </form>
+          <div className="lg:col-span-3 bg-gray-50 border border-gray-200 rounded-2xl overflow-hidden shadow-sm flex flex-col items-center justify-center">
+             <iframe 
+               src="https://docs.google.com/forms/d/e/1FAIpQLSe9bgQ3zYfhjEnNkPPiBnSfsDKs8GfbfVYo-ba9R5Zp1i-EYw/viewform?embedded=true" 
+               width="100%" 
+               height="800" 
+               frameBorder="0" 
+               marginHeight={0} 
+               marginWidth={0}
+               title="Contact Form"
+               className="bg-white"
+             >
+               読み込んでいます…
+             </iframe>
           </div>
         </div>
       </section>
@@ -269,12 +214,15 @@ const Home: React.FC = () => {
           <p className="text-xl text-gray-600 mb-10">
             7日間の無料トライアルで、すべての学習コンテンツにアクセス可能
           </p>
-          <button className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-4 px-12 rounded-full text-lg shadow-xl transition-transform transform hover:scale-105 flex items-center gap-3 mx-auto">
+          <button 
+            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-brand-dark hover:bg-gray-800 text-white font-bold py-4 px-12 rounded-full text-lg shadow-xl transition-transform transform hover:scale-105 flex items-center gap-3 mx-auto"
+          >
              無料体験を始める <ArrowRight />
           </button>
 
           <div className="mt-16 rounded-3xl overflow-hidden shadow-2xl relative">
-              <img src="https://picsum.photos/id/4/1200/600" alt="Platform Dashboard" className="w-full h-auto opacity-90" />
+              <img src="images/cta-dashboard.png" alt="AI Automation Platform Dashboard" className="w-full h-auto opacity-90" />
               <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
           </div>
         </div>

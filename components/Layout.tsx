@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 
 interface LayoutProps {
@@ -9,17 +9,45 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  const navLinks: { name: string; path: string; external?: boolean }[] = [
-    { name: 'サービス概要', path: '/' },
-    { name: '学習コース', path: '/' },
+  const navLinks: { name: string; path: string; id?: string; external?: boolean }[] = [
+    { name: 'サービス概要', path: '/', id: 'service' },
+    { name: '学習コース', path: '/', id: 'courses' },
     { name: 'ブログ', path: '/blog' },
-    { name: '導入事例', path: '/' },
-    { name: '管理画面', path: '/admin/blog' },
+    { name: '導入事例', path: '/', id: 'cases' },
+    { name: 'お問い合わせ', path: 'https://docs.google.com/forms/d/e/1FAIpQLSe9bgQ3zYfhjEnNkPPiBnSfsDKs8GfbfVYo-ba9R5Zp1i-EYw/viewform?usp=header', external: true },
   ];
 
   // Helper to determine if we are on the home page for specific styling or logic
   const isHome = location.pathname === '/';
+
+  const handleContactClick = () => {
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
+        document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } else {
+      document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const handleNavigation = (path: string, id?: string) => {
+    if (id) {
+      if (location.pathname !== '/') {
+        navigate('/');
+        setTimeout(() => {
+          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      }
+    } else {
+      navigate(path);
+      window.scrollTo(0, 0);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen font-sans">
@@ -50,28 +78,21 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {link.name}
                   </a>
                 ) : (
-                  <Link
+                  <button
                     key={link.name}
-                    to={link.path}
+                    onClick={() => handleNavigation(link.path, link.id)}
                     className={`text-sm font-medium hover:opacity-75 transition-colors ${
                       isHome ? 'text-white' : 'text-gray-700 hover:text-brand'
                     }`}
                   >
                     {link.name}
-                  </Link>
+                  </button>
                 )
               ))}
-              <Link
-                to="/admin/blog"
-                className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
-                  isHome
-                    ? 'border-white text-white hover:bg-white hover:text-brand-dark'
-                    : 'border-brand-dark text-brand-dark hover:bg-brand-dark hover:text-white'
-                }`}
+              <button 
+                onClick={handleContactClick}
+                className="bg-brand-accent hover:bg-teal-400 text-brand-dark px-5 py-2 rounded-full text-sm font-bold shadow-lg transition-transform transform hover:scale-105"
               >
-                ログイン
-              </Link>
-              <button className="bg-brand-accent hover:bg-teal-400 text-brand-dark px-5 py-2 rounded-full text-sm font-bold shadow-lg transition-transform transform hover:scale-105">
                 無料体験
               </button>
             </div>
@@ -105,25 +126,26 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     {link.name}
                   </a>
                 ) : (
-                  <Link
+                  <button
                     key={link.name}
-                    to={link.path}
-                    className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={() => {
+                      handleNavigation(link.path, link.id);
+                      setIsMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white hover:bg-white/10"
                   >
                     {link.name}
-                  </Link>
+                  </button>
                 )
               ))}
               <div className="mt-4 flex flex-col space-y-3 px-3">
-                <Link
-                  to="/admin/blog"
-                  className="w-full text-center py-2 border border-white text-white rounded-md"
-                  onClick={() => setIsMenuOpen(false)}
+                <button 
+                  onClick={() => {
+                    handleContactClick();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-center py-2 bg-brand-accent text-brand-dark font-bold rounded-md"
                 >
-                  ログイン
-                </Link>
-                <button className="w-full text-center py-2 bg-brand-accent text-brand-dark font-bold rounded-md">
                   無料体験
                 </button>
               </div>
@@ -167,9 +189,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div>
               <h4 className="text-sm font-bold tracking-wider uppercase mb-4 text-gray-300">Courses</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">基礎コース</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">実践コース</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">エキスパートコース</a></li>
+                <li><button onClick={() => handleNavigation('/', 'courses')} className="hover:text-white transition-colors text-left">基礎コース</button></li>
+                <li><button onClick={() => handleNavigation('/', 'courses')} className="hover:text-white transition-colors text-left">実践コース</button></li>
+                <li><button onClick={() => handleNavigation('/', 'courses')} className="hover:text-white transition-colors text-left">エキスパートコース</button></li>
               </ul>
             </div>
 
@@ -177,7 +199,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <h4 className="text-sm font-bold tracking-wider uppercase mb-4 text-gray-300">Company</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">会社概要</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">お問い合わせ</a></li>
+                <li><a href="https://docs.google.com/forms/d/e/1FAIpQLSe9bgQ3zYfhjEnNkPPiBnSfsDKs8GfbfVYo-ba9R5Zp1i-EYw/viewform?usp=header" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">お問い合わせ</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">プライバシーポリシー</a></li>
               </ul>
             </div>

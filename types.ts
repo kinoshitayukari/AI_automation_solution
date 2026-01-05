@@ -23,6 +23,7 @@ export interface Testimonial {
   company?: string; // Optional context
   content: string;
   avatarInitials: string;
+  avatarUrl?: string;
 }
 
 export interface SolutionStep {
@@ -37,6 +38,7 @@ export interface Challenge {
   number: string;
   title: string;
   description: string;
+  imageUrl: string;
 }
 
 export interface ContactSubmission {
